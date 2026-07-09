@@ -1,0 +1,12 @@
+services:
+  agent:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # The container has no gcloud — BigQuery reuses the host's ADC login read-only.
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+      - ./.data:/app/.data
+    stdin_open: true
+    tty: true

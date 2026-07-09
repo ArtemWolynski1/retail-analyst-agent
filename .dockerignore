@@ -1,0 +1,12 @@
+.venv/
+.git/
+.env
+.data/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.sqlite
+*.sqlite3
+docs/
+CLAUDE.md
+.claude/

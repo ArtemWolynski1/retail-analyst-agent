@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.data/
+*.sqlite
+*.sqlite3
+logs/
+.pytest_cache/
+
+# local AI-assistant workspace files
+CLAUDE.md
+PLAN.md
+.claude/
+.DS_Store
