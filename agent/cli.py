@@ -21,33 +21,64 @@ HELP = """Commands:
 Anything else is a question for the analyst agent."""
 
 
+def _is_thinking_part(part) -> bool:
+    return isinstance(part, dict) and (
+        part.get("type") in ("thinking", "reasoning") or part.get("thought") is True
+    )
+
+
 def message_text(message) -> str:
+    """Visible text only — thinking parts must never reach the rendered answer."""
     content = getattr(message, "content", "")
     if isinstance(content, str):
         return content
     if isinstance(content, list):
         return "".join(
-            part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+            if not _is_thinking_part(part)
         )
     return str(content)
 
 
-def print_verbose_trace(console: Console, messages: list) -> None:
+def message_thoughts(message) -> list[str]:
+    content = getattr(message, "content", "")
+    if not isinstance(content, list):
+        return []
+    thoughts = []
+    for part in content:
+        if _is_thinking_part(part):
+            text = part.get("thinking") or part.get("reasoning") or part.get("text") or ""
+            if text.strip():
+                thoughts.append(text.strip())
+    return thoughts
+
+
+def print_verbose_trace(console: Console, messages: list, debug: bool = False) -> None:
+    clip = 2000 if debug else 300
     for m in messages:
         if getattr(m, "type", "") == "ai":
+            if debug:
+                for thought in message_thoughts(m):
+                    console.print(f"[yellow]🧠 {thought[:clip]}[/yellow]")
             for call in getattr(m, "tool_calls", None) or []:
                 args = str(call.get("args", {}))
-                console.print(f"[dim]→ {call.get('name')}({args[:300]})[/dim]")
+                console.print(f"[dim]→ {call.get('name')}({args[:clip]})[/dim]")
         elif getattr(m, "type", "") == "tool":
             text = message_text(m).replace("\n", " ⏎ ")
-            console.print(f"[dim]← {text[:300]}[/dim]")
+            console.print(f"[dim]← {text[:clip]}[/dim]")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="agent.cli", description="Retail analyst chat agent")
     parser.add_argument("--user", default="manager", help="acting user id (owns saved reports and preferences)")
     parser.add_argument("--verbose", action="store_true", help="show tool calls and results")
+    parser.add_argument(
+        "--debug", action="store_true", help="verbose plus the model's reasoning summaries, untruncated traces"
+    )
     args = parser.parse_args()
+    if args.debug:
+        args.verbose = True
 
     console = Console()
     settings = load_settings()
@@ -59,7 +90,9 @@ def main() -> int:
     with console.status("Loading dataset schema…"):
         schema = fetch_schema(client, settings)
     examples = load_examples(EXAMPLES_PATH)
-    ctx = RuntimeContext(settings=settings, bq=client, user_id=args.user, schema=schema, examples=examples)
+    ctx = RuntimeContext(
+        settings=settings, bq=client, user_id=args.user, schema=schema, examples=examples, debug=args.debug
+    )
     checkpointer = open_checkpointer(settings)
     thread_id = uuid.uuid4().hex
 
@@ -95,7 +128,7 @@ def main() -> int:
             continue
 
         if args.verbose:
-            print_verbose_trace(console, new_messages)
+            print_verbose_trace(console, new_messages, debug=args.debug)
         console.print(Markdown(answer))
 
     console.print("[dim]bye[/dim]")

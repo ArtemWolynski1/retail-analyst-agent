@@ -41,6 +41,7 @@ class RuntimeContext:
     schema: SchemaCache
     examples: list[Trio]
     budget: TurnBudget = field(default_factory=TurnBudget)
+    debug: bool = False
 
 
 def load_examples(path: Path) -> list[Trio]:

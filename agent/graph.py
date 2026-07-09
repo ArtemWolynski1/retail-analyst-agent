@@ -21,7 +21,7 @@ def build_agent(ctx: RuntimeContext, checkpointer: SqliteSaver, system_prompt: s
     assembly is what makes them hot-reloadable without restarts. Conversation
     state survives rebuilds — it lives in the checkpointer, keyed by thread_id."""
     return create_agent(
-        build_chat_model(ctx.settings),
+        build_chat_model(ctx.settings, include_thoughts=ctx.debug),
         tools=build_tools(ctx),
         system_prompt=system_prompt,
         checkpointer=checkpointer,
