@@ -11,6 +11,7 @@ from agent.config import load_settings
 from agent.context import build_system_prompt
 from agent.graph import build_agent, open_checkpointer
 from agent.runtime import RuntimeContext, TurnBudget, load_examples
+from agent.safety.pii import mask_text
 from agent.tools.schema import fetch_schema
 
 EXAMPLES_PATH = Path(__file__).resolve().parent.parent / "data" / "golden_examples.json"
@@ -136,6 +137,9 @@ def main() -> int:
 
         if args.verbose:
             print_verbose_trace(console, new_messages, debug=args.debug)
+        answer, swept = mask_text(answer)
+        if swept and args.verbose:
+            console.print(f"[dim]output sweep masked {swept} PII value(s)[/dim]")
         console.print(Markdown(answer))
 
     console.print("[dim]bye[/dim]")
@@ -229,7 +233,15 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
         if getattr(m, "type", "") == "ai" and not (getattr(m, "tool_calls", None) or []):
             answer = message_text(m)
             break
-    return answer or "(the agent produced no final answer)", new_messages
+    if not answer.strip():
+        # Some models occasionally finish with an empty message after a tool
+        # call. The tool output is already PII-masked, so showing it beats
+        # showing nothing — and costs no extra model call.
+        for m in reversed(new_messages):
+            if getattr(m, "type", "") == "tool":
+                answer = "Here is the raw query result (the model returned no summary):\n\n```\n" + message_text(m) + "\n```"
+                break
+    return answer.strip() or "(the agent produced no answer — try rephrasing)", new_messages
 
 
 if __name__ == "__main__":

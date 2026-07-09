@@ -6,6 +6,7 @@ from langchain_core.tools import tool
 from agent.bq import dry_run, run_query
 from agent.runtime import RuntimeContext
 from agent.safety import sql_guard
+from agent.safety.pii import mask_rows
 
 CELL_MAX_CHARS = 80
 
@@ -52,12 +53,15 @@ def build_run_sql(ctx: RuntimeContext):
         except gexc.GoogleAPICallError as e:
             return f"BigQuery error while executing: {e.message or e}. Fix the SQL and retry."
 
-        return _render(rows, estimated, settings)
+        # Masking sits between BigQuery and the model: raw PII never enters
+        # model context, so no prompt can be tricked into revealing it.
+        masked_rows, masked_cells = mask_rows([dict(row) for row in rows], settings)
+        return _render(masked_rows, estimated, masked_cells, settings)
 
     return run_sql
 
 
-def _render(rows, estimated_bytes: int, settings) -> str:
+def _render(rows: list[dict], estimated_bytes: int, masked_cells: int, settings) -> str:
     if not rows:
         return (
             "The query ran successfully and returned 0 rows. If a mistaken filter is plausible, revise it once; "
@@ -69,6 +73,8 @@ def _render(rows, estimated_bytes: int, settings) -> str:
     for row in shown:
         lines.append(" | ".join(_cell(row[col]) for col in columns))
     footer = f"rows: {len(shown)} of {len(rows)} | scanned (est): {estimated_bytes / 1e6:.1f} MB"
+    if masked_cells:
+        footer += f" | PII values masked: {masked_cells}"
     return "\n".join(lines) + "\n" + footer
 
 
