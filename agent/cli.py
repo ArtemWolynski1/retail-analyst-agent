@@ -1,4 +1,5 @@
 import argparse
+import time
 import uuid
 from pathlib import Path
 
@@ -124,7 +125,13 @@ def main() -> int:
             console.print("[yellow]Cancelled.[/yellow]")
             continue
         except Exception as e:  # the REPL must survive anything a turn throws
-            console.print(f"[red]Something went wrong:[/red] {e}")
+            if _is_provider_error(e):
+                console.print(
+                    "[red]The AI model is unavailable right now (rate limit or outage).[/red] "
+                    "Your conversation is saved — try again in a minute."
+                )
+            else:
+                console.print(f"[red]Something went wrong:[/red] {e}")
             continue
 
         if args.verbose:
@@ -135,22 +142,88 @@ def main() -> int:
     return 0
 
 
+TRANSIENT_BACKOFF_S = (5, 20)
+
+FATAL_MARKERS = ("not found", "not_found", "404", "api key", "api_key", "permission", "unauthorized", "invalid argument")
+
+
+def _is_provider_error(exc: Exception) -> bool:
+    module = type(exc).__module__ or ""
+    if module.startswith(("google.api_core", "google.genai", "langchain_google_genai")):
+        return True
+    text = str(exc).lower()
+    return any(
+        marker in text
+        for marker in ("429", "quota", "rate limit", "resource exhausted", "unavailable", "overloaded", "deadline")
+    )
+
+
+def _is_fatal_model_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return any(marker in text for marker in FATAL_MARKERS)
+
+
+def _resume_input(agent, config, payload):
+    """After a mid-turn failure, continue from the checkpoint instead of
+    re-running the turn: invoke(None) resumes exactly where the graph died,
+    with already-executed tools not re-run. Falls back to the original payload
+    when the failure happened before the question was checkpointed."""
+    messages = agent.get_state(config).values.get("messages", [])
+    if not messages:
+        return payload
+    last = messages[-1]
+    if getattr(last, "type", "") == "ai" and not (getattr(last, "tool_calls", None) or []):
+        return payload
+    return None
+
+
 def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console, verbose: bool):
     ctx.budget = TurnBudget()
     system_prompt = build_system_prompt(ctx.schema.summary, ctx.examples)
     agent = build_agent(ctx, checkpointer, system_prompt)
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": ctx.settings.recursion_limit}
 
-    prior = agent.get_state(config).values.get("messages", [])
+    prior = len(agent.get_state(config).values.get("messages", []))
     payload = {"messages": [{"role": "user", "content": question}]}
-    if verbose:
-        result = agent.invoke(payload, config)
-    else:
+
+    def attempt(active_agent, first: bool):
+        inp = payload if first else _resume_input(active_agent, config, payload)
+        if verbose:
+            return active_agent.invoke(inp, config)
         with console.status("analyzing…"):
-            result = agent.invoke(payload, config)
+            return active_agent.invoke(inp, config)
+
+    result = None
+    try:
+        result = attempt(agent, first=True)
+    except KeyboardInterrupt:
+        raise
+    except Exception as first_error:
+        if not _is_provider_error(first_error):
+            raise
+        if not _is_fatal_model_error(first_error):
+            for delay in TRANSIENT_BACKOFF_S:
+                reason = str(first_error).replace("\n", " ")[:110]
+                console.print(f"[yellow]Model hiccup ({reason}) — retrying in {delay}s…[/yellow]")
+                time.sleep(delay)
+                try:
+                    result = attempt(agent, first=False)
+                    break
+                except KeyboardInterrupt:
+                    raise
+                except Exception as retry_error:
+                    if not _is_provider_error(retry_error):
+                        raise
+                    first_error = retry_error
+        if result is None:
+            console.print(
+                f"[yellow]Primary model unavailable — switching to fallback ({ctx.settings.fallback_model}).[/yellow]"
+            )
+            fallback = build_agent(ctx, checkpointer, system_prompt, role="fallback")
+            result = attempt(fallback, first=False)
 
     messages = result["messages"]
-    new_messages = messages[len(prior) :]
+    new_messages = messages[prior:]
     answer = ""
     for m in reversed(new_messages):
         if getattr(m, "type", "") == "ai" and not (getattr(m, "tool_calls", None) or []):

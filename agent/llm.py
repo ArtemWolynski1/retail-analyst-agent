@@ -13,5 +13,6 @@ def build_chat_model(settings: Settings, role: str = "agent", include_thoughts: 
     model_name = {
         "agent": settings.agent_model,
         "guard": settings.guard_model,
+        "fallback": settings.fallback_model,
     }[role]
     return init_chat_model(f"google_genai:{model_name}", temperature=0, include_thoughts=include_thoughts)
