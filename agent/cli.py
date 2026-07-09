@@ -1,10 +1,13 @@
 import argparse
 import time
 import uuid
+from datetime import date
 from pathlib import Path
 
+from langgraph.types import Command
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.table import Table
 
 from agent.bq import make_client
 from agent.config import load_settings
@@ -12,14 +15,16 @@ from agent.context import build_system_prompt
 from agent.graph import build_agent, open_checkpointer
 from agent.runtime import RuntimeContext, TurnBudget, load_examples
 from agent.safety.pii import mask_text
+from agent.store import Store
 from agent.tools.schema import fetch_schema
 
 EXAMPLES_PATH = Path(__file__).resolve().parent.parent / "data" / "golden_examples.json"
 
 HELP = """Commands:
-  /new    start a fresh conversation
-  /help   show this help
-  /quit   exit
+  /reports  list your saved reports
+  /new      start a fresh conversation
+  /help     show this help
+  /quit     exit
 Anything else is a question for the analyst agent."""
 
 
@@ -92,8 +97,15 @@ def main() -> int:
     with console.status("Loading dataset schema…"):
         schema = fetch_schema(client, settings)
     examples = load_examples(EXAMPLES_PATH)
+    store = Store(settings.sqlite_path)
     ctx = RuntimeContext(
-        settings=settings, bq=client, user_id=args.user, schema=schema, examples=examples, debug=args.debug
+        settings=settings,
+        bq=client,
+        user_id=args.user,
+        schema=schema,
+        examples=examples,
+        store=store,
+        debug=args.debug,
     )
     checkpointer = open_checkpointer(settings)
     thread_id = uuid.uuid4().hex
@@ -118,6 +130,18 @@ def main() -> int:
         if question == "/new":
             thread_id = uuid.uuid4().hex
             console.print("[dim]Started a fresh conversation.[/dim]")
+            continue
+        if question == "/reports":
+            reports = store.list_reports(args.user)
+            if not reports:
+                console.print("[dim]No saved reports.[/dim]")
+            else:
+                table = Table(title=f"Saved reports — {args.user}")
+                for col in ("id", "title", "created"):
+                    table.add_column(col)
+                for r in reports:
+                    table.add_row(r["id"], r["title"], str(r["created_at"]))
+                console.print(table)
             continue
 
         try:
@@ -181,9 +205,33 @@ def _resume_input(agent, config, payload):
     return None
 
 
+def _handle_interrupts(agent, config, result, console: Console):
+    """Destructive-action gate: render the preview, require the exact typed
+    phrase, resume the graph with the verdict. Anything but the phrase —
+    including EOF — cancels."""
+    while True:
+        interrupts = result.get("__interrupt__") or []
+        if not interrupts:
+            return result
+        payload = getattr(interrupts[0], "value", None) or {}
+        table = Table(title=f"⚠ Confirmation required: {payload.get('action', 'destructive action')}")
+        for col in ("id", "title", "created"):
+            table.add_column(col)
+        for item in payload.get("items", []):
+            table.add_row(str(item.get("id", "")), str(item.get("title", "")), str(item.get("created_at", "")))
+        console.print(table)
+        phrase = payload.get("phrase", "confirm")
+        console.print(f"This is permanent. Type [bold]{phrase}[/bold] to proceed — anything else cancels.")
+        try:
+            entered = console.input("[bold red]confirm ›[/] ").strip()
+        except (EOFError, KeyboardInterrupt):
+            entered = ""
+        result = agent.invoke(Command(resume={"approved": entered == phrase}), config)
+
+
 def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console, verbose: bool):
     ctx.budget = TurnBudget()
-    system_prompt = build_system_prompt(ctx.schema.summary, ctx.examples)
+    system_prompt = build_system_prompt(ctx.schema.summary, ctx.examples, today=date.today().isoformat())
     agent = build_agent(ctx, checkpointer, system_prompt)
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": ctx.settings.recursion_limit}
 
@@ -225,6 +273,9 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
             )
             fallback = build_agent(ctx, checkpointer, system_prompt, role="fallback")
             result = attempt(fallback, first=False)
+            agent = fallback
+
+    result = _handle_interrupts(agent, config, result, console)
 
     messages = result["messages"]
     new_messages = messages[prior:]

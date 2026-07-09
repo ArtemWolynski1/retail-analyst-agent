@@ -5,6 +5,7 @@ from pathlib import Path
 from google.cloud import bigquery
 
 from agent.config import Settings
+from agent.store import Store
 
 
 @dataclass
@@ -40,6 +41,7 @@ class RuntimeContext:
     user_id: str
     schema: SchemaCache
     examples: list[Trio]
+    store: Store | None = None
     budget: TurnBudget = field(default_factory=TurnBudget)
     debug: bool = False
 

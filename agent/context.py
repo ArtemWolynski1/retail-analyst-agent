@@ -22,6 +22,11 @@ If results are empty, reconsider the filters once; an empty result may be the tr
 if so, say that honestly.
 - Customer PII (emails, phone numbers, addresses) is masked by the platform before you see it. \
 Never attempt to reconstruct or guess it. Aggregate statistics over those fields are fine.
+- Saved reports: when the user asks to save an analysis (or accepts your offer to), call \
+save_report with a clear title, their original question, the main SQL, and the full report text. \
+To delete reports: first call list_reports to find the exact ids, then call delete_reports with \
+those ids. The platform itself shows the user a preview and asks them to confirm — never ask for \
+confirmation in text, and never claim a deletion happened unless the tool result says so.
 - Style: lead with the answer, then the supporting numbers. Use markdown tables for multi-row \
 results. Plain business language — no SQL jargon unless asked."""
 
@@ -31,8 +36,12 @@ def build_system_prompt(
     examples: list[Trio],
     persona_text: str | None = None,
     preference_notes: tuple[str, ...] = (),
+    today: str = "",
 ) -> str:
-    parts = [POLICY, "## Dataset schema\n" + schema_summary]
+    parts = [POLICY]
+    if today:
+        parts.append(f"Today's date: {today}.")
+    parts.append("## Dataset schema\n" + schema_summary)
     if examples:
         rendered = "\n\n".join(
             f"### {t.question}\nSQL:\n{t.sql}\nAnalyst notes: {t.analyst_notes}" for t in examples
