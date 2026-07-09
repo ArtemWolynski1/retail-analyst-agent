@@ -4,9 +4,23 @@ from contextlib import closing
 from pathlib import Path
 
 
+DEFAULT_PERSONAS = {
+    "professional": (
+        "Concise and businesslike. Lead with the headline number, keep commentary tight, "
+        "prefer tables for anything multi-row. No exclamation marks."
+    ),
+    "enthusiastic": (
+        "Warm, energetic and encouraging. Celebrate wins, frame problems as opportunities, "
+        "keep sentences short and punchy. One exclamation mark per answer is plenty."
+    ),
+}
+
+
 class Store:
-    """SQLite app store. Every method that touches reports filters by user_id
-    inside the SQL — ownership is enforced here, once, not in callers."""
+    """SQLite app store. Every method that touches reports or preferences
+    filters by user_id inside the SQL — ownership is enforced here, once,
+    not in callers. Personas are company-wide (requirement: non-developers
+    change the tone without redeployment)."""
 
     def __init__(self, path: str):
         self.path = Path(path)
@@ -24,6 +38,28 @@ class Store:
                 )"""
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_reports_user ON reports(user_id)")
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS preferences (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    note TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+                )"""
+            )
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS personas (
+                    name TEXT PRIMARY KEY,
+                    instructions TEXT NOT NULL,
+                    is_active INTEGER NOT NULL DEFAULT 0
+                )"""
+            )
+            for name, instructions in DEFAULT_PERSONAS.items():
+                conn.execute(
+                    "INSERT OR IGNORE INTO personas (name, instructions) VALUES (?, ?)", (name, instructions)
+                )
+            active = conn.execute("SELECT COUNT(*) FROM personas WHERE is_active = 1").fetchone()[0]
+            if not active:
+                conn.execute("UPDATE personas SET is_active = 1 WHERE name = 'professional'")
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
@@ -75,3 +111,30 @@ class Store:
                 f"DELETE FROM reports WHERE user_id = ? AND id IN ({placeholders})", [user_id, *ids]
             )
             return cursor.rowcount
+
+    def add_preference(self, user_id: str, note: str) -> None:
+        with closing(self._conn()) as conn, conn:
+            conn.execute("INSERT INTO preferences (user_id, note) VALUES (?, ?)", (user_id, note))
+
+    def get_preferences(self, user_id: str, limit: int = 10) -> list[str]:
+        with closing(self._conn()) as conn:
+            rows = conn.execute(
+                "SELECT note FROM preferences WHERE user_id = ? ORDER BY id DESC LIMIT ?", (user_id, limit)
+            ).fetchall()
+        return [row["note"] for row in reversed(rows)]
+
+    def get_active_persona(self) -> dict | None:
+        with closing(self._conn()) as conn:
+            row = conn.execute("SELECT name, instructions FROM personas WHERE is_active = 1 LIMIT 1").fetchone()
+        return dict(row) if row else None
+
+    def set_active_persona(self, name: str) -> bool:
+        with closing(self._conn()) as conn, conn:
+            cursor = conn.execute("UPDATE personas SET is_active = (name = ?)", (name,))
+            hit = conn.execute("SELECT COUNT(*) FROM personas WHERE name = ?", (name,)).fetchone()[0]
+        return bool(hit)
+
+    def list_personas(self) -> list[dict]:
+        with closing(self._conn()) as conn:
+            rows = conn.execute("SELECT name, is_active FROM personas ORDER BY name").fetchall()
+        return [dict(row) for row in rows]

@@ -63,14 +63,16 @@ Saved reports and conversation state persist in `./.data` between runs.
 
 ```
 agent/
-├── cli.py       # chat REPL, confirmation UX
-├── graph.py     # LangGraph agent wiring
+├── cli.py       # chat REPL, typed-confirmation UX, /persona /reports commands
+├── graph.py     # LangGraph agent wiring (create_agent + checkpointer)
+├── context.py   # system prompt assembly: policy, schema, examples, persona, prefs
+├── runtime.py   # RuntimeContext all tools close over (identity, budget, trace)
 ├── llm.py       # per-role model init (right-sizing hook)
 ├── bq.py        # BigQuery client: dry-run + byte-capped execution
 ├── config.py    # env-driven settings
 ├── smoke.py     # setup validator
-├── tools/       # run_sql, get_schema, reports, preferences
-├── safety/      # SQL guard, PII masker, scope guard
-├── persona.py   # DB-backed personas, hot-swappable
-└── store.py     # SQLite: reports, prefs, personas
+├── trace.py     # JSON-lines session traces
+├── tools/       # run_sql, get_schema, reports, remember_preference
+├── safety/      # SQL guard, PII masker
+└── store.py     # SQLite: reports, preferences, personas (hot-swappable)
 ```

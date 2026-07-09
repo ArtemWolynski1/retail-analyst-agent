@@ -17,14 +17,16 @@ from agent.runtime import RuntimeContext, TurnBudget, load_examples
 from agent.safety.pii import mask_text
 from agent.store import Store
 from agent.tools.schema import fetch_schema
+from agent.trace import Trace
 
 EXAMPLES_PATH = Path(__file__).resolve().parent.parent / "data" / "golden_examples.json"
 
 HELP = """Commands:
-  /reports  list your saved reports
-  /new      start a fresh conversation
-  /help     show this help
-  /quit     exit
+  /reports         list your saved reports
+  /persona [name]  show personas, or switch the active one (no restart needed)
+  /new             start a fresh conversation
+  /help            show this help
+  /quit            exit
 Anything else is a question for the analyst agent."""
 
 
@@ -98,6 +100,8 @@ def main() -> int:
         schema = fetch_schema(client, settings)
     examples = load_examples(EXAMPLES_PATH)
     store = Store(settings.sqlite_path)
+    trace = Trace(settings.log_dir)
+    trace.event("session_start", user=args.user, model=settings.agent_model, examples=len(examples))
     ctx = RuntimeContext(
         settings=settings,
         bq=client,
@@ -105,6 +109,7 @@ def main() -> int:
         schema=schema,
         examples=examples,
         store=store,
+        trace=trace,
         debug=args.debug,
     )
     checkpointer = open_checkpointer(settings)
@@ -131,6 +136,20 @@ def main() -> int:
             thread_id = uuid.uuid4().hex
             console.print("[dim]Started a fresh conversation.[/dim]")
             continue
+        if question.startswith("/persona"):
+            parts = question.split(maxsplit=1)
+            if len(parts) == 1:
+                for p in store.list_personas():
+                    marker = "[green]● active[/green]" if p["is_active"] else "[dim]○[/dim]"
+                    console.print(f"  {marker} {p['name']}")
+            else:
+                name = parts[1].strip()
+                if store.set_active_persona(name):
+                    console.print(f"[dim]Persona switched to '{name}' — takes effect on the next answer.[/dim]")
+                else:
+                    known = ", ".join(p["name"] for p in store.list_personas())
+                    console.print(f"[red]Unknown persona '{name}'.[/red] Available: {known}")
+            continue
         if question == "/reports":
             reports = store.list_reports(args.user)
             if not reports:
@@ -150,6 +169,7 @@ def main() -> int:
             console.print("[yellow]Cancelled.[/yellow]")
             continue
         except Exception as e:  # the REPL must survive anything a turn throws
+            trace.event("turn_end", turn_id=ctx.budget.turn_id, status="error", error=str(e)[:200])
             if _is_provider_error(e):
                 console.print(
                     "[red]The AI model is unavailable right now (rate limit or outage).[/red] "
@@ -205,7 +225,7 @@ def _resume_input(agent, config, payload):
     return None
 
 
-def _handle_interrupts(agent, config, result, console: Console):
+def _handle_interrupts(agent, config, result, console: Console, trace=None, turn_id: str = ""):
     """Destructive-action gate: render the preview, require the exact typed
     phrase, resume the graph with the verdict. Anything but the phrase —
     including EOF — cancels."""
@@ -214,6 +234,11 @@ def _handle_interrupts(agent, config, result, console: Console):
         if not interrupts:
             return result
         payload = getattr(interrupts[0], "value", None) or {}
+        if trace:
+            trace.event(
+                "interrupt_shown", turn_id=turn_id, action=payload.get("action", ""),
+                items=len(payload.get("items", [])),
+            )
         table = Table(title=f"⚠ Confirmation required: {payload.get('action', 'destructive action')}")
         for col in ("id", "title", "created"):
             table.add_column(col)
@@ -226,12 +251,25 @@ def _handle_interrupts(agent, config, result, console: Console):
             entered = console.input("[bold red]confirm ›[/] ").strip()
         except (EOFError, KeyboardInterrupt):
             entered = ""
-        result = agent.invoke(Command(resume={"approved": entered == phrase}), config)
+        approved = entered == phrase
+        if trace:
+            trace.event("interrupt_decision", turn_id=turn_id, approved=approved)
+        result = agent.invoke(Command(resume={"approved": approved}), config)
 
 
 def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console, verbose: bool):
-    ctx.budget = TurnBudget()
-    system_prompt = build_system_prompt(ctx.schema.summary, ctx.examples, today=date.today().isoformat())
+    ctx.budget = TurnBudget(turn_id=uuid.uuid4().hex[:8])
+    started = time.monotonic()
+    ctx.trace.event("turn_start", turn_id=ctx.budget.turn_id, question=question[:150])
+    persona = ctx.store.get_active_persona() if ctx.store else None
+    prefs = tuple(ctx.store.get_preferences(ctx.user_id)) if ctx.store else ()
+    system_prompt = build_system_prompt(
+        ctx.schema.summary,
+        ctx.examples,
+        persona_text=persona["instructions"] if persona else None,
+        preference_notes=prefs,
+        today=date.today().isoformat(),
+    )
     agent = build_agent(ctx, checkpointer, system_prompt)
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": ctx.settings.recursion_limit}
 
@@ -253,6 +291,10 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
     except Exception as first_error:
         if not _is_provider_error(first_error):
             raise
+        ctx.trace.event(
+            "model_error", turn_id=ctx.budget.turn_id, fatal=_is_fatal_model_error(first_error),
+            error=str(first_error)[:200],
+        )
         if not _is_fatal_model_error(first_error):
             for delay in TRANSIENT_BACKOFF_S:
                 reason = str(first_error).replace("\n", " ")[:110]
@@ -271,11 +313,12 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
             console.print(
                 f"[yellow]Primary model unavailable — switching to fallback ({ctx.settings.fallback_model}).[/yellow]"
             )
+            ctx.trace.event("fallback_switch", turn_id=ctx.budget.turn_id, model=ctx.settings.fallback_model)
             fallback = build_agent(ctx, checkpointer, system_prompt, role="fallback")
             result = attempt(fallback, first=False)
             agent = fallback
 
-    result = _handle_interrupts(agent, config, result, console)
+    result = _handle_interrupts(agent, config, result, console, trace=ctx.trace, turn_id=ctx.budget.turn_id)
 
     messages = result["messages"]
     new_messages = messages[prior:]
@@ -292,6 +335,14 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
             if getattr(m, "type", "") == "tool":
                 answer = "Here is the raw query result (the model returned no summary):\n\n```\n" + message_text(m) + "\n```"
                 break
+    ctx.trace.event(
+        "turn_end",
+        turn_id=ctx.budget.turn_id,
+        status="ok",
+        seconds=round(time.monotonic() - started, 2),
+        sql_attempts=ctx.budget.sql_attempts,
+        answer_chars=len(answer),
+    )
     return answer.strip() or "(the agent produced no answer — try rephrasing)", new_messages
 
 

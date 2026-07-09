@@ -6,11 +6,13 @@ from google.cloud import bigquery
 
 from agent.config import Settings
 from agent.store import Store
+from agent.trace import Trace
 
 
 @dataclass
 class TurnBudget:
     sql_attempts: int = 0
+    turn_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,7 @@ class RuntimeContext:
     examples: list[Trio]
     store: Store | None = None
     budget: TurnBudget = field(default_factory=TurnBudget)
+    trace: Trace = field(default_factory=lambda: Trace(None))
     debug: bool = False
 
 

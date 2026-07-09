@@ -22,7 +22,19 @@ def build_run_sql(ctx: RuntimeContext):
             purpose: one line describing what this query is meant to find out.
         """
         settings = ctx.settings
+
+        def trace(outcome: str, **fields) -> None:
+            ctx.trace.event(
+                "sql_attempt",
+                turn_id=ctx.budget.turn_id,
+                attempt=ctx.budget.sql_attempts,
+                outcome=outcome,
+                purpose=purpose[:120],
+                **fields,
+            )
+
         if ctx.budget.sql_attempts >= settings.sql_attempts_per_turn:
+            trace("budget_exhausted")
             return (
                 "SQL budget for this question is exhausted. Summarize the findings you already have, "
                 "or ask the user to refine the question."
@@ -31,16 +43,20 @@ def build_run_sql(ctx: RuntimeContext):
 
         guarded = sql_guard.validate(sql, settings)
         if not guarded.ok:
+            trace("guard_rejected", error=guarded.error[:200])
             return f"Query rejected: {guarded.error}"
 
         try:
             estimated = dry_run(ctx.bq, guarded.sql)
         except gexc.BadRequest as e:
+            trace("dry_run_error", error=str(e.message or e)[:200])
             return f"BigQuery rejected the query: {e.message or e}. Fix the SQL and retry."
         except gexc.NotFound as e:
+            trace("dry_run_error", error=str(e.message or e)[:200])
             return f"BigQuery could not find a referenced object: {e.message or e}. Check names with get_schema."
 
         if estimated > settings.max_bytes_billed:
+            trace("over_byte_cap", bytes_estimated=estimated)
             return (
                 f"Query would scan {estimated / 1e6:.0f} MB, over the {settings.max_bytes_billed / 1e6:.0f} MB cap. "
                 "Select fewer columns or narrow the date range."
@@ -49,13 +65,16 @@ def build_run_sql(ctx: RuntimeContext):
         try:
             rows = run_query(ctx.bq, guarded.sql, settings)
         except FutureTimeoutError:
+            trace("timeout")
             return "Query timed out after 30s. Simplify or narrow it."
         except gexc.GoogleAPICallError as e:
+            trace("exec_error", error=str(e.message or e)[:200])
             return f"BigQuery error while executing: {e.message or e}. Fix the SQL and retry."
 
         # Masking sits between BigQuery and the model: raw PII never enters
         # model context, so no prompt can be tricked into revealing it.
         masked_rows, masked_cells = mask_rows([dict(row) for row in rows], settings)
+        trace("empty" if not rows else "ok", rows=len(rows), bytes_estimated=estimated, masked_cells=masked_cells)
         return _render(masked_rows, estimated, masked_cells, settings)
 
     return run_sql
