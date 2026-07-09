@@ -1,0 +1,59 @@
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from google.cloud import bigquery
+
+from agent.config import Settings
+
+
+@dataclass
+class TurnBudget:
+    sql_attempts: int = 0
+
+
+@dataclass(frozen=True)
+class SchemaCache:
+    tables: dict[str, list[tuple[str, str]]]
+    summary: str
+
+
+@dataclass(frozen=True)
+class Trio:
+    id: str
+    question: str
+    sql: str
+    analyst_notes: str
+    tables_used: tuple[str, ...]
+
+
+@dataclass
+class RuntimeContext:
+    """Per-session context all tools close over.
+
+    Identity lives here and only here — tool schemas never expose a user_id
+    parameter, so the model cannot act as anyone but the session user.
+    """
+
+    settings: Settings
+    bq: bigquery.Client
+    user_id: str
+    schema: SchemaCache
+    examples: list[Trio]
+    budget: TurnBudget = field(default_factory=TurnBudget)
+
+
+def load_examples(path: Path) -> list[Trio]:
+    if not path.exists():
+        return []
+    raw = json.loads(path.read_text())
+    return [
+        Trio(
+            id=t["id"],
+            question=t["question"],
+            sql=t["sql"],
+            analyst_notes=t["analyst_notes"],
+            tables_used=tuple(t.get("tables_used", ())),
+        )
+        for t in raw
+    ]

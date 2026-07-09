@@ -17,6 +17,11 @@ class Settings:
     max_bytes_billed: int
     max_result_rows: int
     sqlite_path: str
+    checkpoint_path: str
+    log_dir: str
+    pii_columns: tuple[str, ...]
+    sql_attempts_per_turn: int
+    recursion_limit: int
 
 
 def load_settings() -> Settings:
@@ -30,4 +35,11 @@ def load_settings() -> Settings:
         max_bytes_billed=int(os.getenv("MAX_BYTES_BILLED", "200000000")),
         max_result_rows=int(os.getenv("MAX_RESULT_ROWS", "50")),
         sqlite_path=os.getenv("SQLITE_PATH", ".data/agent.sqlite"),
+        checkpoint_path=os.getenv("CHECKPOINT_PATH", ".data/checkpoints.sqlite"),
+        log_dir=os.getenv("LOG_DIR", ".data/logs"),
+        pii_columns=tuple(
+            c.strip().lower() for c in os.getenv("PII_COLUMNS", "email,phone,phone_number").split(",") if c.strip()
+        ),
+        sql_attempts_per_turn=int(os.getenv("SQL_ATTEMPTS_PER_TURN", "3")),
+        recursion_limit=int(os.getenv("RECURSION_LIMIT", "15")),
     )
