@@ -14,6 +14,13 @@
     "tables_used": ["order_items", "users"]
   },
   {
+    "id": "us-states-filter",
+    "question": "Which states have the highest revenue?",
+    "sql": "SELECT u.state, ROUND(SUM(oi.sale_price), 2) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') AND u.country = 'United States' GROUP BY u.state ORDER BY revenue DESC LIMIT 10",
+    "analyst_notes": "users.state is global — it holds provinces and regions from every market (Guangdong, England, Sao Paulo...). For 'state' questions default to country = 'United States' and say so; only go global when the user asks. Note country spellings are literal strings: 'United States', 'Brasil'.",
+    "tables_used": ["order_items", "users"]
+  },
+  {
     "id": "why-state-underspending",
     "question": "Why are users in Texas underspending compared to California?",
     "sql": "SELECT u.state, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT u.id), 2) AS spend_per_user, ROUND(COUNT(DISTINCT oi.order_id) / COUNT(DISTINCT u.id), 2) AS orders_per_user, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT oi.order_id), 2) AS avg_order_value FROM `bigquery-public-data.thelook_ecommerce.users` u LEFT JOIN `bigquery-public-data.thelook_ecommerce.order_items` oi ON oi.user_id = u.id AND oi.status IN ('Complete', 'Shipped') WHERE u.state IN ('Texas', 'California') GROUP BY u.state",

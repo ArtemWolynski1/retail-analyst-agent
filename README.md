@@ -6,7 +6,9 @@ runs BigQuery SQL against the `thelook_ecommerce` dataset, self-heals failed que
 deterministically masks customer PII, and manages a saved-reports library with a
 confirmation-gated delete flow.
 
-Built with LangGraph / LangChain v1 and Gemini. Design details: [docs/architecture.md](docs/architecture.md).
+Built with LangGraph / LangChain v1 and Gemini. Design details:
+[docs/architecture.md](docs/architecture.md) · Live demo captures:
+[docs/transcript.md](docs/transcript.md).
 
 ## Setup
 
