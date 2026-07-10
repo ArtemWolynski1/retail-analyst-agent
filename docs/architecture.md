@@ -143,8 +143,26 @@ backoff → model fallback chain; REPL never crashes. -->
 
 ### 3.6 Quality assurance
 
-<!-- TODO: eval set from golden questions (value assertions via independent SQL +
-LLM judge for intent/grounding/PII), CI regression gate, pre-deploy bar. -->
+<!-- TODO: write as a LAYERED strategy, each layer catching what the previous can't:
+L0 deterministic unit tests (SQL guard, PII masker, confirm-gate UX, store ownership,
+   prompt assembly) — exists, 43 tests, runs in <1s, zero API cost, CI on every push.
+L1 prompt-level evals — promptfoo scaffold in evals/promptfoo/: renders through the
+   SAME production assembly seam (build_system_prompt via prompt.py, schema from a
+   checked-in snapshot), so what's evaluated is what ships. Cases target tool-free
+   policy adherence: injection refusal, scope refusal, PII non-compliance, persona
+   changes tone but never rules. Runs as a prompt×model matrix; gate before any
+   prompts/policy.md change ships.
+L2 agent-level evals — golden questions end-to-end: value assertions via
+   independently written SQL + LLM judge for intent/grounding/no-PII (stretch
+   harness in evals/).
+L3 production — every trace turn carries prompt_version (content hash), so
+   Langfuse/LangSmith can: manage prompts (load_policy() is the single adapter
+   seam to swap file→service), build eval datasets from real traces, run judge
+   samples, and correlate regressions to the exact prompt version. Prompts are
+   data (prompts/policy.md, hot-reloaded per turn like personas) — the same
+   property serves requirement 8 (non-dev edits) and eval tooling (versioning).
+REQUIREMENT CLARIFICATION anchor: cite the 24% cancelled/returned revenue example
+as what L2 value assertions exist to catch. -->
 
 ### 3.7 Observability
 
