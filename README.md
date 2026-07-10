@@ -35,6 +35,11 @@ Two first-time gotchas the validator will surface: your GCP project must have th
 BigQuery API enabled (the error includes the enable link), and Google may require
 2-Step Verification on your account before it allows Cloud console actions.
 
+If `pip install` fails with `No matching distribution found for langchain==…`
+after a wall of "Ignored the following versions…", your `python3` is older than
+3.10 (macOS ships 3.9) — create the venv with an explicit newer interpreter,
+e.g. `python3.12 -m venv .venv`.
+
 ## Run
 
 ```bash
