@@ -51,7 +51,8 @@ flowchart TB
         BQ[("BigQuery — read-only<br/>thelook_ecommerce")]
         APPDB[("SQLite app store<br/>reports · prefs · personas · checkpoints")]
         FEWS["golden_examples.json<br/>static few-shot stand-in"]
-        GOLD[("Golden bucket @ 10k+ trios<br/>GCS data lake + vector index")]
+        LAKE[("Golden bucket — GCS data lake<br/>system of record: trios + lineage")]
+        VIDX[("Serving index — pgvector<br/>hot path · rebuildable from the lake")]
     end
 
     subgraph LEARN[" Learning loop — system level "]
@@ -80,18 +81,19 @@ flowchart TB
     FEWS --> CTX
     LOOP --> FINAL --> CLI
     LOOP -.-> GEM --> FALL
-    GOLD --- RETR
+    LAKE ==>|"hydrate · blue-green rebuild"| VIDX
+    VIDX --- RETR
     RETR -.->|"top-k trios at query time"| CTX
-    FINAL -.->|"accepted reports"| PROMO --> GOLD
-    NIGHT --> GOLD
-    EMB --- GOLD
+    FINAL -.->|"accepted reports"| PROMO --> LAKE
+    NIGHT --> LAKE
+    EMB --- VIDX
     CORE -.-> LOGS
     CORE -.-> DASH
     EVAL -.->|"pre-deploy gate"| CORE
 
     class CLI,GUARD,CTX,LOOP,TSQL,TSCH,TREP,TDEL,TPREF,SQLG,PIIM,HITL,FINAL,GEM,FALL,BQ,APPDB,LOGS proto
     class FEWS,EVAL stretch
-    class WEB,GOLD,RETR,PROMO,NIGHT,EMB,DASH future
+    class WEB,LAKE,VIDX,RETR,PROMO,NIGHT,EMB,DASH future
 ```
 
 ## 3. Requirement-by-requirement design
@@ -122,7 +124,11 @@ also has names/addresses/geo → configurable denylist; audit trail. -->
 as the only destructive tool; interrupt() gate previews the exact ids → typed confirm →
 delete precisely those ids (ids not filter: LangGraph re-runs pre-interrupt code on
 resume, a filter would re-resolve after confirmation = TOCTOU drift); ownership ambient
-from session (model cannot spoof user_id), cancel path. -->
+from session (model cannot spoof user_id), cancel path.
+REQUIREMENT CLARIFICATION (maintainer, Slack 2026-07-09): store and regional managers
+have identical access — no RBAC tiers. Identity exists for report ownership and
+personalization only; role-based data scoping is documented as a future extension
+point, not designed for. -->
 
 ### 3.4 Continuous improvement
 
