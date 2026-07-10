@@ -65,17 +65,31 @@ def message_thoughts(message) -> list[str]:
 
 def print_verbose_trace(console: Console, messages: list, debug: bool = False) -> None:
     clip = 2000 if debug else 300
+    model_calls = 0
     for m in messages:
-        if getattr(m, "type", "") == "ai":
+        kind = getattr(m, "type", "")
+        if kind == "ai":
+            model_calls += 1
+            tool_calls = getattr(m, "tool_calls", None) or []
             if debug:
-                for thought in message_thoughts(m):
-                    console.print(f"[yellow]🧠 {thought[:clip]}[/yellow]")
-            for call in getattr(m, "tool_calls", None) or []:
+                console.print(f"[dim]── model call {model_calls} ──[/dim]")
+                thoughts = message_thoughts(m)
+                if thoughts:
+                    for thought in thoughts:
+                        console.print(f"[yellow]🧠 {thought[:clip]}[/yellow]")
+                else:
+                    # Gemini decides per call whether to emit thought summaries;
+                    # simple synthesis steps often skip thinking entirely.
+                    console.print("[dim]🧠 (no thinking summary returned for this step)[/dim]")
+            for call in tool_calls:
                 args = str(call.get("args", {}))
                 console.print(f"[dim]→ {call.get('name')}({args[:clip]})[/dim]")
-        elif getattr(m, "type", "") == "tool":
+            if debug and not tool_calls:
+                console.print(f"[dim]↳ final answer produced at model call {model_calls}[/dim]")
+        elif kind == "tool":
+            name = getattr(m, "name", "") or "tool"
             text = message_text(m).replace("\n", " ⏎ ")
-            console.print(f"[dim]← {text[:clip]}[/dim]")
+            console.print(f"[dim]← {name}: {text[:clip]}[/dim]")
 
 
 def main() -> int:
