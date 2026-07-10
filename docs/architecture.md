@@ -150,11 +150,15 @@ backoff → model fallback chain; REPL never crashes. -->
 <!-- TODO: write as a LAYERED strategy, each layer catching what the previous can't:
 L0 deterministic unit tests (SQL guard, PII masker, confirm-gate UX, store ownership,
    prompt assembly) — exists, 43 tests, runs in <1s, zero API cost, CI on every push.
-L1 prompt-level evals — promptfoo scaffold in evals/promptfoo/: renders through the
-   SAME production assembly seam (build_system_prompt via prompt.py, schema from a
-   checked-in snapshot), so what's evaluated is what ships. Cases target tool-free
-   policy adherence: injection refusal, scope refusal, PII non-compliance, persona
-   changes tone but never rules. Runs as a prompt×model matrix; gate before any
+L1 prompt-level evals — two runners over the SAME production assembly seam
+   (build_system_prompt, schema from a checked-in snapshot), so what's evaluated is
+   what ships. Cases target tool-free policy adherence: injection refusal, scope
+   refusal, PII non-compliance, persona changes tone but never rules.
+   Primary: `pytest -m live` (tests/test_policy_live.py) — stack-native, zero extra
+   toolchain, excluded from default runs, deliberately uses the weakest model in the
+   fallback chain (policy must not depend on model size). Verified 4/4.
+   Optional: promptfoo (evals/promptfoo/) for prompt×model matrix runs and the HTML
+   report — needs Node; same cases, verified 4/4. Gate either before any
    prompts/policy.md change ships.
 L2 agent-level evals — golden questions end-to-end: value assertions via
    independently written SQL + LLM judge for intent/grounding/no-PII (stretch
