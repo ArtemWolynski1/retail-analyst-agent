@@ -60,6 +60,7 @@ docker compose build
 docker compose run --rm agent agent.smoke        # setup validator
 docker compose run --rm agent                    # chat REPL
 docker compose run --rm agent agent.cli --user alice
+docker compose run --rm agent pytest -m live     # prompt-policy evals (live model)
 ```
 
 Saved reports and conversation state persist in `./.data` between runs.
