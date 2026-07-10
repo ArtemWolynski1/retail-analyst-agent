@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from agent.config import load_settings
 from agent.safety.sql_guard import validate
 
@@ -61,3 +63,13 @@ def test_existing_limit_preserved():
     result = validate("SELECT status FROM orders LIMIT 7", settings)
     assert result.ok
     assert "LIMIT 7" in result.sql
+
+
+def test_dataset_qualifiers_follow_settings():
+    other = replace(settings, bq_dataset="my-project.other_dataset")
+    qualified = validate("SELECT status FROM orders", other)
+    assert qualified.ok
+    assert "my-project" in qualified.sql and "other_dataset" in qualified.sql
+    # and the default dataset is now rejected under the changed config
+    rejected = validate("SELECT status FROM `bigquery-public-data.thelook_ecommerce.orders`", other)
+    assert not rejected.ok

@@ -15,9 +15,6 @@ ALLOWED_TABLES = {
     "distribution_centers",
 }
 
-DATASET_PROJECT = "bigquery-public-data"
-DATASET_NAME = "thelook_ecommerce"
-
 # Errors are phrased for the model: name the violated rule and how to proceed,
 # so the agent loop can self-correct instead of flailing.
 FORBIDDEN_NODES = [
@@ -37,6 +34,7 @@ class GuardResult:
 
 
 def validate(sql: str, settings: Settings) -> GuardResult:
+    dataset_project, _, dataset_name = settings.bq_dataset.partition(".")
     try:
         statements = [s for s in sqlglot.parse(sql, read="bigquery") if s is not None]
     except sqlglot.errors.ParseError as e:
@@ -67,16 +65,16 @@ def validate(sql: str, settings: Settings) -> GuardResult:
                 f"Table '{table.name}' is not accessible. Allowed tables: {', '.join(sorted(ALLOWED_TABLES))}. "
                 "Use get_schema to inspect their columns.",
             )
-        if table.catalog and table.catalog != DATASET_PROJECT:
-            return GuardResult(False, sql, f"Only the `{DATASET_PROJECT}` project is accessible.")
-        if table.db and table.db != DATASET_NAME:
-            return GuardResult(False, sql, f"Only the `{DATASET_NAME}` dataset is accessible.")
+        if table.catalog and table.catalog != dataset_project:
+            return GuardResult(False, sql, f"Only the `{dataset_project}` project is accessible.")
+        if table.db and table.db != dataset_name:
+            return GuardResult(False, sql, f"Only the `{dataset_name}` dataset is accessible.")
         # Auto-qualify bare names so the model may write `orders` and still hit
-        # the public dataset (the client has no default dataset configured).
+        # the configured dataset (the client has no default dataset configured).
         if not table.db:
-            table.set("db", exp.to_identifier(DATASET_NAME))
+            table.set("db", exp.to_identifier(dataset_name))
         if not table.catalog:
-            table.set("catalog", exp.to_identifier(DATASET_PROJECT))
+            table.set("catalog", exp.to_identifier(dataset_project))
 
     if isinstance(root, exp.Select) and not root.args.get("limit"):
         root = root.limit(DEFAULT_LIMIT)
