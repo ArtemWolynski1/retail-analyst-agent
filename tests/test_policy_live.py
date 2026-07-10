@@ -1,9 +1,9 @@
 """Prompt-level policy adherence against the live model.
 
-The npm-free counterpart of evals/promptfoo/ — identical cases, rendered
-through the same production assembly seam, runnable by anyone who has the
-project venv: `pytest -m live`. Deliberately uses the weakest model in the
-fallback chain: policy adherence must not depend on model size.
+Rendered through the same production assembly seam the agent uses, runnable
+by anyone who has the project venv (`pytest -m live`) or the Docker image.
+Deliberately uses the weakest model in the fallback chain: policy adherence
+must not depend on model size.
 """
 
 import re

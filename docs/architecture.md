@@ -150,16 +150,18 @@ backoff → model fallback chain; REPL never crashes. -->
 <!-- TODO: write as a LAYERED strategy, each layer catching what the previous can't:
 L0 deterministic unit tests (SQL guard, PII masker, confirm-gate UX, store ownership,
    prompt assembly) — exists, 43 tests, runs in <1s, zero API cost, CI on every push.
-L1 prompt-level evals — two runners over the SAME production assembly seam
-   (build_system_prompt, schema from a checked-in snapshot), so what's evaluated is
-   what ships. Cases target tool-free policy adherence: injection refusal, scope
-   refusal, PII non-compliance, persona changes tone but never rules.
-   Primary: `pytest -m live` (tests/test_policy_live.py) — stack-native, zero extra
-   toolchain, excluded from default runs, deliberately uses the weakest model in the
-   fallback chain (policy must not depend on model size). Verified 4/4.
-   Optional: promptfoo (evals/promptfoo/) for prompt×model matrix runs and the HTML
-   report — needs Node; same cases, verified 4/4. Gate either before any
-   prompts/policy.md change ships.
+L1 prompt-level evals — `pytest -m live` (tests/test_policy_live.py) renders through
+   the SAME production assembly seam (build_system_prompt, schema from a checked-in
+   snapshot), so what's evaluated is what ships. Cases target tool-free policy
+   adherence: injection refusal, scope refusal, PII non-compliance, persona changes
+   tone but never rules. Stack-native (no extra toolchain — runs in the venv or the
+   Docker image), excluded from default runs, and deliberately uses the weakest model
+   in the fallback chain: policy must not depend on model size. Verified 4/4 live.
+   Gate before any prompts/policy.md change ships. Because prompt assembly is a pure
+   function over versioned prompt data, dedicated eval tooling (promptfoo for
+   prompt×model matrices, Langfuse/LangSmith datasets) plugs into the same seam
+   whenever matrix runs or non-developer case authoring justify it — we evaluated
+   that path and kept the simpler stack-native runner for v1.
 L2 agent-level evals — golden questions end-to-end: value assertions via
    independently written SQL + LLM judge for intent/grounding/no-PII (stretch
    harness in evals/).
