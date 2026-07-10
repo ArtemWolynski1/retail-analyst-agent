@@ -120,11 +120,15 @@ also has names/addresses/geo → configurable denylist; audit trail. -->
 
 ### 3.3 High-stakes oversight — saved-reports deletion
 
-<!-- TODO: least-authority split — list_reports(filter) read-only vs delete_reports(ids)
-as the only destructive tool; interrupt() gate previews the exact ids → typed confirm →
-delete precisely those ids (ids not filter: LangGraph re-runs pre-interrupt code on
-resume, a filter would re-resolve after confirmation = TOCTOU drift); ownership ambient
-from session (model cannot spoof user_id), cancel path.
+<!-- TODO: delete_reports is the single destructive tool; it accepts the user's own
+vocabulary (search substring / created_on date) or explicit ids — the spec's inputs
+("Delete all reports mentioning Client X", "we made today") resolve in ONE tool call
+and the model never asks users for ids. Design evolution worth narrating: v1 was
+ids-only for least authority + TOCTOU safety (LangGraph re-runs pre-interrupt code on
+resume, so a filter would re-resolve after confirmation); v2 moved that guarantee into
+the gate — the CLI echoes the previewed ids back in Command(resume={approved, ids}),
+so the deleted set is pinned to what the human saw, by construction. Ownership ambient
+from session (model cannot spoof user_id); typed-phrase confirm; cancel path.
 REQUIREMENT CLARIFICATION (maintainer, Slack 2026-07-09): store and regional managers
 have identical access — no RBAC tiers. Identity exists for report ownership and
 personalization only; role-based data scoping is documented as a future extension

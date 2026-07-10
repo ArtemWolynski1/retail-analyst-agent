@@ -254,7 +254,10 @@ def _handle_interrupts(agent, config, result, console: Console, trace=None, turn
         approved = entered == phrase
         if trace:
             trace.event("interrupt_decision", turn_id=turn_id, approved=approved)
-        result = agent.invoke(Command(resume={"approved": approved}), config)
+        # Echo the previewed ids back so the tool deletes exactly the set the
+        # user saw, immune to filter re-resolution on resume.
+        previewed_ids = [str(item.get("id", "")) for item in payload.get("items", [])]
+        result = agent.invoke(Command(resume={"approved": approved, "ids": previewed_ids}), config)
 
 
 def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console, verbose: bool):

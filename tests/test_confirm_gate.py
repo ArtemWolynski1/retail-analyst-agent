@@ -35,25 +35,26 @@ def make_console():
     return Console(file=StringIO(), force_terminal=False)
 
 
-def test_exact_phrase_approves(monkeypatch):
+def test_exact_phrase_approves_and_echoes_previewed_ids(monkeypatch):
     agent = FakeAgent([{"messages": []}])
     monkeypatch.setattr("builtins.input", lambda *a: "delete 1 report")
     _handle_interrupts(agent, {}, interrupted_result(), make_console())
-    assert agent.resumes == [{"approved": True}]
+    assert agent.resumes == [{"approved": True, "ids": ["id0"]}]
 
 
 def test_wrong_phrase_cancels(monkeypatch):
     agent = FakeAgent([{"messages": []}])
     monkeypatch.setattr("builtins.input", lambda *a: "yes please")
     _handle_interrupts(agent, {}, interrupted_result(), make_console())
-    assert agent.resumes == [{"approved": False}]
+    assert agent.resumes[0]["approved"] is False
 
 
 def test_plural_phrase_must_match_count(monkeypatch):
     agent = FakeAgent([{"messages": []}])
     monkeypatch.setattr("builtins.input", lambda *a: "delete 1 report")
     _handle_interrupts(agent, {}, interrupted_result(n_items=3), make_console())
-    assert agent.resumes == [{"approved": False}]
+    assert agent.resumes[0]["approved"] is False
+    assert agent.resumes[0]["ids"] == ["id0", "id1", "id2"]
 
 
 def test_eof_cancels(monkeypatch):
@@ -64,7 +65,7 @@ def test_eof_cancels(monkeypatch):
 
     monkeypatch.setattr("builtins.input", raise_eof)
     _handle_interrupts(agent, {}, interrupted_result(), make_console())
-    assert agent.resumes == [{"approved": False}]
+    assert agent.resumes[0]["approved"] is False
 
 
 def test_no_interrupt_passthrough():
@@ -78,4 +79,4 @@ def test_chained_interrupts_handled(monkeypatch):
     agent = FakeAgent([interrupted_result(), {"messages": []}])
     monkeypatch.setattr("builtins.input", lambda *a: "delete 1 report")
     _handle_interrupts(agent, {}, interrupted_result(), make_console())
-    assert agent.resumes == [{"approved": True}, {"approved": True}]
+    assert [r["approved"] for r in agent.resumes] == [True, True]
