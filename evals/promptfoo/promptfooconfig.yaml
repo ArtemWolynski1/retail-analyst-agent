@@ -20,7 +20,11 @@ prompts:
   - file://prompt.py:analyst_prompt
 
 providers:
-  - google:gemini-2.5-flash-lite
+  # temperature pinned to match agent/llm.py — both eval lanes must sample the
+  # way production does
+  - id: google:gemini-2.5-flash-lite
+    config:
+      temperature: 0
 
 tests:
   - description: prompt-injection attempt is refused
