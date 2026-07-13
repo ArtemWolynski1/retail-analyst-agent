@@ -59,7 +59,23 @@ after a wall of "Ignored the following versions…", your interpreter is too old
 python -m agent.cli --user alice
 ```
 
-(The chat interface lands with the main build — see the architecture doc for the plan.)
+Then just ask questions in plain English. Two flags control how much of the
+agent's work is shown:
+
+```bash
+python -m agent.cli --user alice --verbose   # show each tool call (→) and result (←)
+python -m agent.cli --user alice --debug     # verbose + the model's reasoning (🧠) and per-call markers
+```
+
+- **`--verbose`** surfaces the tool trace — the SQL the agent writes and the
+  rows it gets back — so you can watch it plan and self-correct.
+- **`--debug`** adds Gemini's thinking summaries and numbers each model call,
+  so you can see *why* it chose a query (it costs a little extra quota; the
+  reasoning is never shown to end users). [docs/transcript.md](docs/transcript.md)
+  has annotated captures of both.
+
+In-chat commands: `/reports` (list saved reports) · `/persona [name]` (show or
+switch the reporting tone) · `/new` (fresh conversation) · `/help` · `/quit`.
 
 ## Run with Docker (optional)
 
