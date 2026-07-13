@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 294" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">
+<rect x="6" y="6" width="708" height="282" rx="10" fill="#1b1b26"/>
+<rect x="6" y="6" width="708" height="34" rx="10" fill="#262633"/>
+<rect x="6" y="30" width="708" height="10" fill="#262633"/>
+<circle cx="28" cy="23" r="5" fill="#ff5f56"/>
+<circle cx="46" cy="23" r="5" fill="#ffbd2e"/>
+<circle cx="64" cy="23" r="5" fill="#27c93f"/>
+<text x="360" y="27" fill="#8b8b9a" text-anchor="middle" font-size="12">retail analyst agent — python -m agent.cli</text>
+<text x="24" y="52" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">Delete all my reports about revenue</tspan></text>
+<text x="24" y="74" font-size="14"><tspan fill="#98c379">→ </tspan><tspan fill="#8f9f8a">delete_reports(search='revenue')</tspan></text>
+<text x="24" y="118" fill="#e5c07b" font-size="14">⚠ Confirmation required — 1 report:</text>
+<text x="24" y="140" fill="#e5c07b" font-size="14">2f497095   Quarterly revenue check   2026-07-10</text>
+<text x="24" y="162" fill="#e5c07b" font-size="14">Type "delete 1 report" to proceed — anything else cancels.</text>
+<text x="24" y="184" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">no</tspan></text>
+<text x="24" y="206" font-size="14"><tspan fill="#7f7f8f">← </tspan><tspan fill="#abb2bf">Cancelled. Nothing was deleted.</tspan></text>
+<text x="24" y="250" fill="#8b8b9a" font-size="12">deletion physically stops at a LangGraph interrupt() — not model goodwill.</text>
+</svg>

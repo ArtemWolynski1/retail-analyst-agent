@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 206" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">
+<rect x="6" y="6" width="708" height="194" rx="10" fill="#1b1b26"/>
+<rect x="6" y="6" width="708" height="34" rx="10" fill="#262633"/>
+<rect x="6" y="30" width="708" height="10" fill="#262633"/>
+<circle cx="28" cy="23" r="5" fill="#ff5f56"/>
+<circle cx="46" cy="23" r="5" fill="#ffbd2e"/>
+<circle cx="64" cy="23" r="5" fill="#27c93f"/>
+<text x="360" y="27" fill="#8b8b9a" text-anchor="middle" font-size="12">retail analyst agent — python -m agent.cli</text>
+<rect x="16" y="102" width="688" height="32" rx="8" fill="#20202c" stroke="#3a3a4a"/>
+<text x="24" y="52" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">/persona enthusiastic</tspan></text>
+<text x="24" y="74" fill="#e5c07b" font-size="14">Persona switched to 'enthusiastic' — takes effect on the next answer.</text>
+<text x="24" y="96" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">How did June go for us overall?</tspan></text>
+<text x="24" y="118" fill="#e6e6ef" font-size="14">June was a strong month, bringing in $299,068.55 in revenue!</text>
+<text x="24" y="162" fill="#8b8b9a" font-size="12">company tone, hot-swapped mid-session — no redeploy.</text>
+</svg>

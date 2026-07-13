@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 272" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">
+<rect x="6" y="6" width="708" height="260" rx="10" fill="#1b1b26"/>
+<rect x="6" y="6" width="708" height="34" rx="10" fill="#262633"/>
+<rect x="6" y="30" width="708" height="10" fill="#262633"/>
+<circle cx="28" cy="23" r="5" fill="#ff5f56"/>
+<circle cx="46" cy="23" r="5" fill="#ffbd2e"/>
+<circle cx="64" cy="23" r="5" fill="#27c93f"/>
+<text x="360" y="27" fill="#8b8b9a" text-anchor="middle" font-size="12">retail analyst agent — python -m agent.cli</text>
+<rect x="16" y="58" width="688" height="32" rx="8" fill="#20202c" stroke="#3a3a4a"/>
+<rect x="16" y="146" width="688" height="54" rx="8" fill="#20202c" stroke="#3a3a4a"/>
+<text x="24" y="52" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">From now on I prefer concise bullet-point answers.</tspan></text>
+<text x="24" y="74" fill="#e6e6ef" font-size="14">Understood — I'll keep answers to bullet points from now on.</text>
+<text x="24" y="118" fill="#8b8b9a" font-size="12">— new process, same user, later —</text>
+<text x="24" y="140" font-size="14"><tspan fill="#56b6c2">you › </tspan><tspan fill="#e6e6ef">What are our top 3 product categories by revenue?</tspan></text>
+<text x="24" y="162" fill="#e6e6ef" font-size="14">• Outerwear &amp; Coats — $185,890    • Jeans — $182,574</text>
+<text x="24" y="184" fill="#e6e6ef" font-size="14">• Sweaters — $118,996</text>
+<text x="24" y="228" fill="#8b8b9a" font-size="12">the preference survived a full restart (SQLite-backed memory).</text>
+</svg>

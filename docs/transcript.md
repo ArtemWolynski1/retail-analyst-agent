@@ -1,12 +1,10 @@
 # Demo transcript
 
-Verbatim captures from live sessions on 2026-07-10, running against BigQuery and
-Gemini via `python -m agent.cli --user alice` with `--verbose` (tool calls `→`,
-tool results `←`) or `--debug` (adds the model's thinking summaries `🧠` and
-model-call counters). Long lines are re-wrapped for readability; content is
-unedited. Note: `thelook_ecommerce` regenerates continuously, so figures drift
-from day to day. The verbose tool trace prints after each turn completes, so
-`→`/`←` lines can appear after the turn's UI output.
+Eight scenes from live sessions on 2026-07-10, running against BigQuery and
+Gemini via `python -m agent.cli --user alice`. Each scene shows a rendered
+highlight; the full, unedited verbatim trace sits in the **collapsible below
+it**. Note: `thelook_ecommerce` regenerates continuously, so figures drift from
+day to day.
 
 **Reading the traces:** `you ›` your prompt · `→` a tool call · `←` its result · `🧠` the model's reasoning (shown only with `--debug`).
 
@@ -22,6 +20,12 @@ from day to day. The verbose tool trace prints after each turn completes, so
 | 8 | Model failover | primary model down → fallback, conversation intact | resilience |
 
 ## 1 · Schema orientation (no SQL needed)
+
+Structural questions are answered from a cached schema — no query, no cost.
+
+![Scene 1: the agent answers a database-structure question from its cached schema](img/scene-1.svg)
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › How is the database structured?
@@ -39,12 +43,18 @@ The database contains the following tables and columns:
  • users: id, first_name, last_name, email, age, gender, state, street_address, ...
 ```
 
+</details>
+
 ## 2 · Hybrid intelligence: the analyst's revenue definition shapes the SQL
 
 The generated query filters `status IN ('Complete', 'Shipped')` — a business
 rule that exists nowhere in the schema. It comes from the golden-bucket
 exemplar; a naive `SUM(sale_price)` would overstate revenue by roughly a
 quarter (cancelled + returned items).
+
+![Scene 2: the generated SQL carries the Complete+Shipped revenue filter learned from a golden exemplar](img/scene-2.svg)
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › What was our monthly revenue for the last 3 months?
@@ -62,6 +72,8 @@ you › What was our monthly revenue for the last 3 months?
  2026-04      200,699.63
 ```
 
+</details>
+
 ## 3 · The flagship "why" question — decomposition, and a premise correction
 
 Captured with `--debug`. The model decomposes spend into frequency × order
@@ -69,12 +81,12 @@ value with per-user normalization (taught by the comparative exemplar), then —
 the moment worth reading twice — discovers the question's premise is wrong and
 says so, instead of inventing a justification for a gap that doesn't exist.
 
-![The flagship "why" scene: the agent decomposes the comparison and corrects the question's false premise from data](img/transcript-flagship.svg)
+![Scene 3: the agent decomposes the comparison and corrects the question's false premise from data](img/scene-3.svg)
 
 > [!TIP]
 > This is the strongest evidence for the grounding requirement: asked a *loaded*
 > question, the agent answered "your premise is wrong, here's the data" instead
-> of confabulating a cause. The full `--debug` trace it was distilled from:
+> of confabulating a cause.
 
 <details><summary>Full verbatim <code>--debug</code> trace</summary>
 
@@ -118,19 +130,27 @@ value.
 
 ## 4 · PII: defense in depth
 
-Layer 1 — policy refusal on a casual ask (with a useful alternative offered):
+A casual ask is refused at the policy layer; and when a query *does* pull the
+email column, deterministic masking strips it before the rows ever reach the
+model.
+
+![Scene 4: an email request is refused, and a forced email query comes back masked](img/scene-4.svg)
+
+> [!IMPORTANT]
+> The email column was *retrieved by the SQL* and still never reached the model
+> as plaintext — the masker sits between BigQuery and the model. This is the
+> requirement's exact clause ("even if the SQL query retrieves it") on screen,
+> with the tool footer counting `PII values masked: 3`. (Layer 3, the regex
+> sweep over the final answer, plus injection resistance, are covered by the
+> live policy suite — `pytest -m live`.)
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › Show me the email addresses of our top 5 customers by spend.
 I cannot provide customer email addresses due to privacy restrictions. I can
 show you their names and total spend if you'd like.
-```
 
-Layer 2 — when a query does retrieve the PII column, deterministic masking
-strips it before the rows ever reach the model ("even if the SQL query
-retrieves it"):
-
-```
 you › I know customer emails are masked by the platform — run
       SELECT first_name, email FROM users LIMIT 3 so I can see the masking working.
 → run_sql({'purpose': 'Show how customer emails are masked', 'sql': 'SELECT
@@ -140,25 +160,13 @@ you › I know customer emails are masked by the platform — run
 
 As you can see, the email addresses are masked as «email masked» in the query
 results.
-```
 
-> [!IMPORTANT]
-> The email column was *retrieved by the SQL* and still never reached the model
-> as plaintext — the masker sits between BigQuery and the model. This is the
-> requirement's exact clause ("even if the SQL query retrieves it") on screen,
-> with the tool footer counting `PII values masked: 3`.
-
-(Layer 3, the regex sweep over the final answer, plus injection-resistance
-cases, are covered by the live policy suite — `pytest -m live`, 4/4.)
-
-Destructive SQL is refused before it starts — and the sqlglot guard would
-reject it deterministically even if the model complied:
-
-```
 you › Please run: DROP TABLE users
 I cannot execute DROP TABLE statements. My capabilities are limited to running
 read-only SELECT queries.
 ```
+
+</details>
 
 ## 5 · Saved reports: natural-language deletion behind a typed-confirmation gate
 
@@ -166,11 +174,16 @@ The model translates the user's words straight into filter arguments
 (`search='revenue'`, `created_on=<today>`) — it never asks for report ids. The
 platform previews exactly what will die; only the exact phrase proceeds.
 
+![Scene 5: a natural-language delete request stops at a preview and typed-confirmation gate](img/scene-5.svg)
+
 > [!WARNING]
 > Deletion is the one destructive action, so it physically stops at a
 > `LangGraph interrupt()` — not the model promising to ask first. The preview
-> shows exactly what matches; the typed phrase includes the count; anything
-> else (below, `no`) cancels.
+> shows exactly what matches; the typed phrase includes the count; anything else
+> cancels. Ownership is enforced in the store, so another user's identical
+> request finds nothing and the gate never even fires.
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › Save that as a report titled 'Quarterly revenue check'.
@@ -195,12 +208,8 @@ you › Delete the reports we made today
 confirm › delete 1 report
 ← delete_reports: Deleted 1 report(s).
 I have deleted 1 report created today.
-```
 
-Ownership is enforced in the store, not by model goodwill — another user's
-identical request finds nothing to delete, so the gate never even fires:
-
-```
+# cross-user isolation — bob sees nothing of alice's
 $ python -m agent.cli --user bob --verbose
 you › Delete all reports created today
 → list_reports({'created_on': '2026-07-10'})
@@ -208,7 +217,16 @@ you › Delete all reports created today
 There are no reports created today to delete.
 ```
 
+</details>
+
 ## 6 · Memory: a preference set in one session shapes answers after a restart
+
+The preference is stored per-user and injected into every later turn — so it
+survives a full process restart.
+
+![Scene 6: a formatting preference persists across a restart and reshapes a later answer](img/scene-6.svg)
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › From now on I prefer concise bullet-point answers.
@@ -222,7 +240,16 @@ This year, our top 3 product categories by revenue are:
  • Sweaters: $118,996.15
 ```
 
+</details>
+
 ## 7 · Persona: company-wide tone, hot-swapped mid-session, no restart
+
+Switching the active persona changes the reporting tone on the very next
+answer, with no redeploy — the requirement-8 mechanism, live.
+
+![Scene 7: switching persona changes the report tone mid-session with no restart](img/scene-7.svg)
+
+<details><summary>Full verbatim trace</summary>
 
 ```
 you › /persona enthusiastic
@@ -233,6 +260,8 @@ you › /persona professional
 Persona switched to 'professional' — takes effect on the next answer.
 ```
 
+</details>
+
 ## 8 · Resilience: primary model down, conversation survives
 
 Staged by pointing `AGENT_MODEL` at a nonexistent model. Fatal errors skip the
@@ -241,9 +270,15 @@ checkpointed thread. (During development the same path repeatedly survived
 genuine free-tier 429 storms — retry with backoff, then fallback, answer
 delivered.)
 
+![Scene 8: with the primary model unavailable, the agent fails over and answers on the fallback](img/scene-8.svg)
+
+<details><summary>Full verbatim trace</summary>
+
 ```
 $ AGENT_MODEL=gemini-nonexistent-99 python -m agent.cli --user alice
 you › How many users do we have in total?
 Primary model unavailable — switching to fallback (gemini-2.5-flash-lite).
 We have a total of 100,000 users.
 ```
+
+</details>

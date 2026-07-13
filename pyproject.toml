@@ -33,8 +33,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
-# the CLI prompt glyph (you ›) is intentional
-allowed-confusables = ["›"]
+# intentional glyphs in CLI output and transcript scene text
+allowed-confusables = ["›", "×", "«", "»"]
 
 [tool.mypy]
 python_version = "3.12"
