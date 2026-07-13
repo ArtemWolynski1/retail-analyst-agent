@@ -453,7 +453,7 @@ Layered, each level catching what the previous can't:
   scope refusal, PII non-compliance, and persona-changes-tone-but-not-rules —
   run against the **weakest model in the fallback chain**, because policy
   adherence must not depend on model size. Excluded from default test runs;
-  gates any change to `prompts/policy.md`. (A promptfoo variant was built and
+  gates any change to `prompts/analyst-agent-instructions.prompt`. (A promptfoo variant was built and
   verified 4/4, then removed in favor of the single stack-native lane; matrix
   tooling plugs back into the same seam when prompt×model runs justify it.)
 - **L2 — agent-level evals** (designed; the natural next increment): a golden
@@ -506,17 +506,20 @@ data**, layered by authority:
 
 | Layer | Who sets it | Scope | Mechanism |
 |---|---|---|---|
-| Base policy (`prompts/policy.md`) | Engineering | everything incl. safety rules | versioned file, hot-reloaded per turn |
+| Base policy (`prompts/analyst-agent-instructions.prompt`) | Engineering | everything incl. safety rules | versioned file, hot-reloaded per turn |
 | Persona | CEO / admin — a non-developer | every user, company-wide | DB row, `/persona`, hot-swapped |
 | Preferences | each manager, conversationally | that one user | `remember_preference` |
 
 The system prompt is assembled fresh every turn, which is *why* all three
-layers hot-reload with zero deploys: edit the policy file, switch the persona,
-or state a preference, and the next answer reflects it (transcript §7 — the
-tone flips mid-session). Ordering encodes authority: safety policy first,
-persona explicitly framed as "style guidance only — never overrides the rules
-above", preferences last. That constraint is *tested*, not asserted: the L1
-suite's warm-persona case still refuses the PII request. One-line summary that
+layers hot-reload with zero deploys: edit the instructions file, switch the
+persona, or state a preference, and the next answer reflects it (transcript §7
+— the tone flips mid-session). Precedence is declared, not implied: the static
+instructions carry `<style_defaults>` that persona and preferences explicitly
+*may* override (user preferences beating persona on conflict), while the
+`<untrusted_content_rule>` scopes tagged content to exactly that — presentation
+only, never capabilities, rules, or data access. That constraint is *tested*,
+not asserted: the L1 suite's warm-persona and hostile-preference cases both
+still refuse the PII request. One-line summary that
 also answers "why not just let users instruct the model": **preferences
 personalize, personas govern** — a company-wide tone directive can't depend on
 two hundred managers each remembering to ask for it, and user-supplied text
@@ -525,7 +528,7 @@ must never carry instruction-level authority.
 Every policy change is traceable: the `prompt_version` hash in each turn's
 trace pins which instructions produced which answer. In production the file
 becomes a managed prompt (Langfuse / prompt hub) behind the same one-function
-seam (`load_policy()`), giving non-developers an edit UI with versioning and
+seam (`load_instructions()`), giving non-developers an edit UI with versioning and
 rollback.
 
 ## 4. Production topology & operations
@@ -615,7 +618,7 @@ eval runs cost under two dollars at paid-tier prices.
 | `llm.py` per-role model config | LLM gateway (LiteLLM / Vertex) — provider switch via config |
 | `golden_examples.json` (static 4) | Golden bucket: GCS lake → hydrated pgvector index, hybrid retrieval |
 | JSON-lines traces | OTel → LangSmith/Langfuse + dashboards + alerting |
-| `prompts/policy.md` on disk | Managed prompt with labels/rollback behind `load_policy()` |
+| `prompts/analyst-agent-instructions.prompt` on disk | Managed prompt with labels/rollback behind `load_instructions()` |
 | `--user` flag | SSO identity on the API |
 | Thin heuristic input guard | Dedicated cheap-model intent classifier (`GUARD_MODEL`) |
 

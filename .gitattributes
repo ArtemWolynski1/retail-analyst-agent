@@ -1,0 +1,3 @@
+# Prompt files are XML-tag-structured plain text; render them with XML
+# highlighting on GitHub so the section structure is visible to readers.
+prompts/*.prompt linguist-language=XML

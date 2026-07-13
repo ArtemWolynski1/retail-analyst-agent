@@ -11,7 +11,7 @@ from rich.table import Table
 
 from agent.bq import make_client
 from agent.config import load_settings
-from agent.context import build_system_prompt, load_policy, prompt_version
+from agent.context import build_system_prompt, load_instructions, prompt_version
 from agent.graph import build_agent, open_checkpointer
 from agent.runtime import RuntimeContext, TurnBudget, load_examples
 from agent.safety.pii import mask_text
@@ -286,9 +286,9 @@ def _handle_interrupts(agent, config, result, console: Console, trace=None, turn
 def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console, verbose: bool):
     ctx.budget = TurnBudget(turn_id=uuid.uuid4().hex[:8])
     started = time.monotonic()
-    policy = load_policy()
+    instructions = load_instructions()
     ctx.trace.event(
-        "turn_start", turn_id=ctx.budget.turn_id, question=question[:150], prompt_version=prompt_version(policy)
+        "turn_start", turn_id=ctx.budget.turn_id, question=question[:150], prompt_version=prompt_version(instructions)
     )
     persona = ctx.store.get_active_persona() if ctx.store else None
     prefs = tuple(ctx.store.get_preferences(ctx.user_id)) if ctx.store else ()
@@ -298,7 +298,7 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
         persona_text=persona["instructions"] if persona else None,
         preference_notes=prefs,
         today=date.today().isoformat(),
-        policy=policy,
+        instructions=instructions,
     )
     agent = build_agent(ctx, checkpointer, system_prompt)
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": ctx.settings.recursion_limit}

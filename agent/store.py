@@ -3,11 +3,10 @@ import uuid
 from contextlib import closing
 from pathlib import Path
 
+# Personas are diffs against the prompt's <style_defaults> — they should only
+# say what they change, never restate the defaults.
 DEFAULT_PERSONAS = {
-    "professional": (
-        "Concise and businesslike. Lead with the headline number, keep commentary tight, "
-        "prefer tables for anything multi-row. No exclamation marks."
-    ),
+    "professional": "Concise and businesslike. Keep commentary tight. No exclamation marks.",
     "enthusiastic": (
         "Warm, energetic and encouraging. Celebrate wins, frame problems as opportunities, "
         "keep sentences short and punchy. One exclamation mark per answer is plenty."
