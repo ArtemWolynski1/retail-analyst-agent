@@ -11,7 +11,9 @@ COPY agent/ agent/
 COPY prompts/ prompts/
 COPY data/ data/
 COPY tests/ tests/
-COPY pytest.ini .
+# pyproject carries the pytest config (live-marker exclusion) — without it a
+# plain `pytest` in the container would run the quota-burning live suite too
+COPY pyproject.toml .
 
 # ENTRYPOINT/CMD split lets the module be swapped per run:
 #   docker compose run agent agent.smoke     — setup validator
