@@ -3,7 +3,6 @@ import uuid
 from contextlib import closing
 from pathlib import Path
 
-
 DEFAULT_PERSONAS = {
     "professional": (
         "Concise and businesslike. Lead with the headline number, keep commentary tight, "
@@ -54,9 +53,7 @@ class Store:
                 )"""
             )
             for name, instructions in DEFAULT_PERSONAS.items():
-                conn.execute(
-                    "INSERT OR IGNORE INTO personas (name, instructions) VALUES (?, ?)", (name, instructions)
-                )
+                conn.execute("INSERT OR IGNORE INTO personas (name, instructions) VALUES (?, ?)", (name, instructions))
             active = conn.execute("SELECT COUNT(*) FROM personas WHERE is_active = 1").fetchone()[0]
             if not active:
                 conn.execute("UPDATE personas SET is_active = 1 WHERE name = 'professional'")
@@ -107,9 +104,7 @@ class Store:
             return 0
         placeholders = ",".join("?" * len(ids))
         with closing(self._conn()) as conn, conn:
-            cursor = conn.execute(
-                f"DELETE FROM reports WHERE user_id = ? AND id IN ({placeholders})", [user_id, *ids]
-            )
+            cursor = conn.execute(f"DELETE FROM reports WHERE user_id = ? AND id IN ({placeholders})", [user_id, *ids])
             return cursor.rowcount
 
     def add_preference(self, user_id: str, note: str) -> None:
@@ -129,10 +124,14 @@ class Store:
         return dict(row) if row else None
 
     def set_active_persona(self, name: str) -> bool:
+        # Existence check FIRST: the update sets is_active for every row, so
+        # running it with an unknown name would deactivate all personas.
         with closing(self._conn()) as conn, conn:
-            cursor = conn.execute("UPDATE personas SET is_active = (name = ?)", (name,))
             hit = conn.execute("SELECT COUNT(*) FROM personas WHERE name = ?", (name,)).fetchone()[0]
-        return bool(hit)
+            if not hit:
+                return False
+            conn.execute("UPDATE personas SET is_active = (name = ?)", (name,))
+        return True
 
     def list_personas(self) -> list[dict]:
         with closing(self._conn()) as conn:

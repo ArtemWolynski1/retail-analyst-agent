@@ -43,7 +43,7 @@ def build_run_sql(ctx: RuntimeContext):
 
         guarded = sql_guard.validate(sql, settings)
         if not guarded.ok:
-            trace("guard_rejected", error=guarded.error[:200])
+            trace("guard_rejected", error=(guarded.error or "")[:200])
             return f"Query rejected: {guarded.error}"
 
         try:

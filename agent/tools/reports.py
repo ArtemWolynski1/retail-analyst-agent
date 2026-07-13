@@ -17,6 +17,10 @@ def resolve_delete_targets(
 
 
 def build_report_tools(ctx: RuntimeContext) -> list:
+    if ctx.store is None:
+        raise ValueError("report tools require a configured store")
+    store = ctx.store
+
     @tool
     def save_report(title: str, question: str, sql: str, report_markdown: str) -> str:
         """Save a finished analysis to the user's report library.
@@ -27,7 +31,7 @@ def build_report_tools(ctx: RuntimeContext) -> list:
             sql: the main SQL query behind the analysis.
             report_markdown: the full report text as shown to the user.
         """
-        report_id = ctx.store.save_report(ctx.user_id, title, question, sql, report_markdown)
+        report_id = store.save_report(ctx.user_id, title, question, sql, report_markdown)
         return f"Saved as report {report_id} ('{title}')."
 
     @tool
@@ -38,7 +42,7 @@ def build_report_tools(ctx: RuntimeContext) -> list:
             search: optional substring matched against title, question and content.
             created_on: optional date filter in YYYY-MM-DD format.
         """
-        reports = ctx.store.list_reports(ctx.user_id, search=search, created_on=created_on)
+        reports = store.list_reports(ctx.user_id, search=search, created_on=created_on)
         if not reports:
             return "No saved reports match."
         return "\n".join(f"{r['id']} | {r['title']} | {r['created_at']}" for r in reports)
@@ -56,7 +60,7 @@ def build_report_tools(ctx: RuntimeContext) -> list:
             search: substring filter over title, question and content.
             created_on: date filter in YYYY-MM-DD format.
         """
-        matched = resolve_delete_targets(ctx.store, ctx.user_id, ids, search, created_on)
+        matched = resolve_delete_targets(store, ctx.user_id, ids, search, created_on)
         if matched is None:
             return "Give explicit ids or a filter (search and/or created_on) so I know what to delete."
         if not matched:
@@ -75,7 +79,7 @@ def build_report_tools(ctx: RuntimeContext) -> list:
         # not a re-resolved filter: pre-interrupt code re-runs on resume, and a
         # filter could match a different set by then. Preview == deletion, always.
         approved_ids = [str(i) for i in decision.get("ids") or []] or [r["id"] for r in matched]
-        deleted = ctx.store.delete_by_ids(ctx.user_id, approved_ids)
+        deleted = store.delete_by_ids(ctx.user_id, approved_ids)
         return f"Deleted {deleted} report(s)."
 
     return [save_report, list_reports, delete_reports]

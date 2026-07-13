@@ -1,0 +1,49 @@
+[project]
+name = "retail-analyst-agent"
+version = "0.1.0"
+description = "Conversational data-analysis agent for retail managers over BigQuery"
+requires-python = ">=3.12"
+# requirements.txt stays the reviewer-facing install path (the assignment
+# specifies pip); keep both dependency lists in sync.
+dependencies = [
+    "langchain==1.3.11",
+    "langgraph==1.2.8",
+    "langgraph-checkpoint-sqlite==3.1.0",
+    "langchain-google-genai==4.2.7",
+    "google-cloud-bigquery==3.42.2",
+    "sqlglot==30.12.0",
+    "rich==15.0.0",
+    "python-dotenv==1.2.2",
+    "structlog==26.1.0",
+    "tenacity==9.1.4",
+    "pytest==9.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "mypy>=1.15",
+    "pyrefly>=1.0",
+    "pre-commit>=4.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+# the CLI prompt glyph (you ›) is intentional
+allowed-confusables = ["›"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["agent"]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+addopts = "-m 'not live'"
+markers = [
+    "live: makes real Gemini API calls (costs quota) — run explicitly: pytest -m live",
+]

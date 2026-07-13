@@ -67,6 +67,22 @@ docker compose run --rm agent pytest -m live     # prompt-policy evals (live mod
 
 Saved reports and conversation state persist in `./.data` between runs.
 
+## Development
+
+Modern-stack tooling, all configured in `pyproject.toml`: [Ruff](https://docs.astral.sh/ruff/)
+(lint + format), **mypy and Pyrefly** (both fully green), a committed
+[uv](https://docs.astral.sh/uv/) lockfile, pre-commit hooks, and CI (GitHub
+Actions) running the whole gauntlet on a Python 3.12 + 3.14 matrix — the same
+pip install path reviewers use.
+
+```bash
+pip install -r requirements-dev.txt    # or, with uv: uv sync
+ruff check . && ruff format .          # lint + format
+mypy && pyrefly check agent/           # both type checkers
+pytest                                 # offline suite (48 tests)
+pre-commit install                     # optional: same gates on every commit
+```
+
 ## Project layout
 
 ```

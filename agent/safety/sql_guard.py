@@ -50,7 +50,9 @@ def validate(sql: str, settings: Settings) -> GuardResult:
     for node_type in FORBIDDEN_NODES:
         if list(root.find_all(node_type)):
             return GuardResult(
-                False, sql, f"Statement contains a forbidden {node_type.__name__.upper()} operation. Only SELECT is allowed."
+                False,
+                sql,
+                f"Statement contains a forbidden {node_type.__name__.upper()} operation. Only SELECT is allowed.",
             )
 
     cte_names = {cte.alias_or_name.lower() for cte in root.find_all(exp.CTE)}

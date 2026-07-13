@@ -30,9 +30,7 @@ def test_unknown_table_rejected():
 
 
 def test_information_schema_rejected():
-    result = validate(
-        "SELECT * FROM `bigquery-public-data.thelook_ecommerce`.INFORMATION_SCHEMA.COLUMNS", settings
-    )
+    result = validate("SELECT * FROM `bigquery-public-data.thelook_ecommerce`.INFORMATION_SCHEMA.COLUMNS", settings)
     assert not result.ok
 
 

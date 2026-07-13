@@ -4,6 +4,10 @@ from agent.runtime import RuntimeContext
 
 
 def build_memory_tools(ctx: RuntimeContext) -> list:
+    if ctx.store is None:
+        raise ValueError("memory tools require a configured store")
+    store = ctx.store
+
     @tool
     def remember_preference(note: str) -> str:
         """Store a durable preference about how this user wants analyses presented.
@@ -15,7 +19,7 @@ def build_memory_tools(ctx: RuntimeContext) -> list:
             note: the preference as one short sentence, e.g. "Prefers bullet
                 points over tables".
         """
-        ctx.store.add_preference(ctx.user_id, note)
+        store.add_preference(ctx.user_id, note)
         return f"Preference noted: {note}"
 
     return [remember_preference]

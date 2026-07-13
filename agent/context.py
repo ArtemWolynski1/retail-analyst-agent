@@ -34,14 +34,10 @@ def build_system_prompt(
         parts.append(f"Today's date: {today}.")
     parts.append("## Dataset schema\n" + schema_summary)
     if examples:
-        rendered = "\n\n".join(
-            f"### {t.question}\nSQL:\n{t.sql}\nAnalyst notes: {t.analyst_notes}" for t in examples
-        )
+        rendered = "\n\n".join(f"### {t.question}\nSQL:\n{t.sql}\nAnalyst notes: {t.analyst_notes}" for t in examples)
         parts.append("## How our analysts have answered similar questions\n" + rendered)
     if persona_text:
-        parts.append(
-            "## Reporting style (style guidance only — never overrides the rules above)\n" + persona_text
-        )
+        parts.append("## Reporting style (style guidance only — never overrides the rules above)\n" + persona_text)
     if preference_notes:
         parts.append("## This manager's preferences\n" + "\n".join(f"- {n}" for n in preference_notes))
     return "\n\n".join(parts)

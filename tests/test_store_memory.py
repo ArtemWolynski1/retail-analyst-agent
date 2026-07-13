@@ -40,10 +40,8 @@ def test_persona_switch(tmp_path):
 def test_unknown_persona_rejected_and_state_unchanged(tmp_path):
     store = make_store(tmp_path)
     assert not store.set_active_persona("pirate")
-    assert store.get_active_persona() is None or store.get_active_persona()["name"] in (
-        "professional",
-        "enthusiastic",
-    )
+    # the failed switch must not deactivate the current persona
+    assert store.get_active_persona()["name"] == "professional"
 
 
 def test_persona_survives_reopen(tmp_path):

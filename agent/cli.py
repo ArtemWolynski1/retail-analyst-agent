@@ -31,9 +31,7 @@ Anything else is a question for the analyst agent."""
 
 
 def _is_thinking_part(part) -> bool:
-    return isinstance(part, dict) and (
-        part.get("type") in ("thinking", "reasoning") or part.get("thought") is True
-    )
+    return isinstance(part, dict) and (part.get("type") in ("thinking", "reasoning") or part.get("thought") is True)
 
 
 def message_text(message) -> str:
@@ -206,7 +204,16 @@ def main() -> int:
 
 TRANSIENT_BACKOFF_S = (5, 20)
 
-FATAL_MARKERS = ("not found", "not_found", "404", "api key", "api_key", "permission", "unauthorized", "invalid argument")
+FATAL_MARKERS = (
+    "not found",
+    "not_found",
+    "404",
+    "api key",
+    "api_key",
+    "permission",
+    "unauthorized",
+    "invalid argument",
+)
 
 
 def _is_provider_error(exc: Exception) -> bool:
@@ -250,7 +257,9 @@ def _handle_interrupts(agent, config, result, console: Console, trace=None, turn
         payload = getattr(interrupts[0], "value", None) or {}
         if trace:
             trace.event(
-                "interrupt_shown", turn_id=turn_id, action=payload.get("action", ""),
+                "interrupt_shown",
+                turn_id=turn_id,
+                action=payload.get("action", ""),
                 items=len(payload.get("items", [])),
             )
         table = Table(title=f"⚠ Confirmation required: {payload.get('action', 'destructive action')}")
@@ -313,7 +322,9 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
         if not _is_provider_error(first_error):
             raise
         ctx.trace.event(
-            "model_error", turn_id=ctx.budget.turn_id, fatal=_is_fatal_model_error(first_error),
+            "model_error",
+            turn_id=ctx.budget.turn_id,
+            fatal=_is_fatal_model_error(first_error),
             error=str(first_error)[:200],
         )
         if not _is_fatal_model_error(first_error):
@@ -354,7 +365,9 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
         # showing nothing — and costs no extra model call.
         for m in reversed(new_messages):
             if getattr(m, "type", "") == "tool":
-                answer = "Here is the raw query result (the model returned no summary):\n\n```\n" + message_text(m) + "\n```"
+                answer = (
+                    "Here is the raw query result (the model returned no summary):\n\n```\n" + message_text(m) + "\n```"
+                )
                 break
     ctx.trace.event(
         "turn_end",

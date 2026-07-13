@@ -41,7 +41,7 @@ def mask_rows(rows: list[dict], settings: Settings) -> tuple[list[dict], int]:
     hits = 0
     masked_rows: list[dict] = []
     for row in rows:
-        out = {}
+        out: dict[str, object] = {}
         for col, value in row.items():
             if col.lower() in denylist and value is not None:
                 out[col] = f"«{col.lower()} masked»"
