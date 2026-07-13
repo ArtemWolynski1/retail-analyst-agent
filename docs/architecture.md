@@ -391,22 +391,31 @@ Layered, each level catching what the previous can't:
   false-positive safety), the confirmation gate UX against a fake graph
   (exact phrase approves; wrong phrase, wrong count, and EOF cancel), store
   ownership isolation, prompt assembly ordering, trace format.
-- **L1 — prompt-level evals** (`pytest -m live`, 4/4): adversarial cases
+- **L1 — prompt-level evals** (`pytest -m live`, 6/6): adversarial cases
   rendered through the *same* production assembly seam — injection refusal,
-  scope refusal, PII non-compliance, and persona-changes-tone-but-not-rules —
-  run against the **weakest model in the fallback chain**, because policy
-  adherence must not depend on model size. Excluded from default test runs;
-  gates any change to `prompts/analyst-agent-instructions.prompt`. (A promptfoo variant was built and
-  verified 4/4, then removed in favor of the single stack-native lane; matrix
+  scope refusal, PII non-compliance, persona-changes-tone-but-not-rules, and
+  hostile-preference and undefined-metric-hedge cases — run against the
+  **weakest model in the fallback chain**, because policy adherence must not
+  depend on model size. Excluded from default test runs; gates any change to
+  `prompts/analyst-agent-instructions.prompt`. (A promptfoo variant was built
+  and verified, then removed in favor of the single stack-native lane; matrix
   tooling plugs back into the same seam when prompt×model runs justify it.)
-- **L2 — agent-level evals** (designed; the natural next increment): a golden
-  question set run end-to-end, graded two ways. *Value assertions*: expected
-  numbers computed by independently-written SQL — this is what catches
-  semantically-wrong-but-running SQL, the naive-revenue class of bug. *LLM
-  judge*: does the report answer the user's intent, is every claim grounded,
-  is it PII-free? Grounding is also machine-checkable without a judge: every
-  number in the answer must appear in some tool result within the same turn's
-  trace.
+- **L2 — agent-level evals** (built: `evals/`, 10 cases, `python evals/run.py`
+  → `evals/report.md`). Each case drives the real agent, then grades two ways.
+  *Number oracle (hard gate)*: expected values from independently-authored SQL,
+  run live so they track the drifting dataset — this catches
+  semantically-wrong-but-running SQL, the naive-revenue class of bug (the oracle
+  encodes the Complete+Shipped definition, so a naive sum fails it). *LLM judge
+  (advisory)*: intent-match, grounding, honest handling of false premises and
+  undefined metrics. The two tiers are deliberately ranked: the oracle is
+  authoritative, the judge is signal — the current report has one SOFT row where
+  the judge wrongly objects to a correct answer and the oracle overrides it,
+  which is exactly why an LLM judge must never be the sole gate. Grounding is
+  also machine-checkable without a judge: every number in the answer must appear
+  in some tool result within the same turn's trace. The question set is seeded
+  from the golden trios, so the same corpus teaches and tests the agent. It
+  covers adversarial dimensions too — false-premise correction, empty-result
+  honesty, and PII-in-analysis are cases, not hopes.
 - **L3 — production evaluation**: every turn's trace carries a
   `prompt_version` content hash, so regressions and incidents correlate to the
   exact prompt that produced them; traces become eval datasets in
@@ -414,8 +423,9 @@ Layered, each level catching what the previous can't:
   suite runs in CI as the pre-deploy gate.
 
 How we verify reports answer user intent *before* deployment: L2's paired
-value-assertions + judge rubric over the golden question set, with the
-held-out slice of the golden bucket doubling as the retrieval regression set.
+number-oracle + judge over the golden question set (`evals/report.md` is the
+committed evidence), with the held-out slice of the golden bucket doubling as
+the retrieval regression set.
 
 ### 3.7 Observability
 

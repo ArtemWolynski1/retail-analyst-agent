@@ -80,6 +80,8 @@ pip install -r requirements-dev.txt    # or, with uv: uv sync
 ruff check . && ruff format .          # lint + format
 mypy && pyrefly check agent/           # both type checkers
 pytest                                 # offline suite (48 tests)
+pytest -m live                         # prompt-policy evals (live model, ~6 cases)
+python evals/run.py                    # agent-level evals → evals/report.md (live)
 pre-commit install                     # optional: same gates on every commit
 d2 --layout elk docs/diagrams/architecture.d2 docs/diagrams/architecture.svg  # regen diagram
 ```
