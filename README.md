@@ -15,16 +15,27 @@ Built with LangGraph / LangChain v1 and Gemini. Design details:
 Prerequisites: Python 3.12+ (developed on 3.14), the [gcloud CLI](https://cloud.google.com/sdk/docs/install),
 a GCP project you own, and a free [Gemini API key](https://aistudio.google.com/apikey).
 
+**macOS / Linux:**
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env   # then fill in GOOGLE_API_KEY and GOOGLE_CLOUD_PROJECT
-
+cp .env.example .env            # then fill in GOOGLE_API_KEY and GOOGLE_CLOUD_PROJECT
 gcloud auth application-default login
 ```
 
-Validate the setup — each failing check prints the command that fixes it:
+**Windows (PowerShell):**
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env     # then fill in GOOGLE_API_KEY and GOOGLE_CLOUD_PROJECT
+gcloud auth application-default login
+```
+
+Once the venv is active, `python`, `pip`, and every command below are identical on
+all platforms. Validate the setup — each failing check prints the command that fixes it:
 
 ```bash
 python -m agent.smoke
@@ -38,9 +49,9 @@ BigQuery API enabled (the error includes the enable link), and Google may requir
 2-Step Verification on your account before it allows Cloud console actions.
 
 If `pip install` fails with `No matching distribution found for langchain==…`
-after a wall of "Ignored the following versions…", your `python3` is older than
-3.10 (macOS ships 3.9) — create the venv with an explicit newer interpreter,
-e.g. `python3.12 -m venv .venv`.
+after a wall of "Ignored the following versions…", your interpreter is too old
+(macOS ships 3.9) — recreate the venv with an explicit newer one:
+`python3.12 -m venv .venv` on macOS/Linux, or `py -3.12 -m venv .venv` on Windows.
 
 ## Run
 
@@ -65,7 +76,14 @@ docker compose run --rm agent agent.cli --user alice
 docker compose run --rm agent pytest -m live     # prompt-policy evals (live model)
 ```
 
-Saved reports and conversation state persist in `./.data` between runs.
+Saved reports and conversation state persist in `./.data` between runs. On
+Windows the mount for your gcloud credentials differs — set `GCLOUD_CONFIG_DIR`
+first so the container can find them:
+
+```powershell
+$env:GCLOUD_CONFIG_DIR = "$env:APPDATA\gcloud"
+docker compose run --rm agent agent.smoke
+```
 
 ## Development
 

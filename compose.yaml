@@ -6,7 +6,9 @@ services:
         required: false
     volumes:
       # The container has no gcloud — BigQuery reuses the host's ADC login read-only.
-      - ~/.config/gcloud:/root/.config/gcloud:ro
+      # Default is the macOS/Linux path; on Windows set GCLOUD_CONFIG_DIR to
+      # %APPDATA%\gcloud (see README).
+      - ${GCLOUD_CONFIG_DIR:-~/.config/gcloud}:/root/.config/gcloud:ro
       - ./.data:/app/.data
     stdin_open: true
     tty: true
