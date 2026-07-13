@@ -567,12 +567,18 @@ caching of answers is deliberately rejected**: embedding similarity blurs
 exactly what matters here — "Texas last week" and "Texas last month" sit a
 whisker apart in embedding space with entirely different correct answers — and
 a false hit is a confidently wrong number delivered fast, silently bypassing
-the system's grounding guarantee. The safe semantic layer already exists: the
-golden bucket *is* a semantic cache that **teaches instead of replays** —
-retrieval finds the prior interpretation, the model adapts it to the live
-parameters, and execution always runs fresh. Cache-fill is the promotion
-pipeline; lookup is hybrid retrieval; the adjudicator that prevents
-parameter-blur errors is the model itself.
+the system's grounding guarantee. The safe semantic layer already exists at a
+different altitude: the golden bucket — which stores **interpretations, never
+result data** — is memoization of *derivation* with a cache-like lookup. A
+"hit" skips deriving the approach from scratch (better first-attempt SQL,
+fewer retry loops), not the warehouse query, which always re-executes — that
+is precisely why answers stay fresh. Retrieved SQL is never replayed verbatim:
+the model adapts the logic to the live parameters, which is what makes
+semantic matching safe here and unsafe for answers. The organizing rule:
+freshness requirements pick the matching strategy — results (change hourly)
+get exact matching and short TTLs; interpretations (change quarterly) may be
+matched semantically behind a model adjudicator; schema (changes by migration)
+caches freely with nightly validation.
 
 **Cost posture, informed by experience:** development on the free tier hit the
 real limits (20 requests/day/model; and Gemini's prepay billing model) — so
