@@ -556,6 +556,24 @@ GCP, because the data already lives there (data gravity, IAM in one place):
   gate; policy/prompt changes go through the same pipeline as code — review,
   eval gate, deploy — without a service rebuild.
 
+**Caching strategy.** The workload invites caching — many managers ask similar
+questions about similar markets — but the layer must be chosen carefully,
+because in analytics the parameters *are* the question and answers move with
+the clock. An **exact-match result cache** (normalized question + user + date
+bucket, 5–15 min TTL) safely absorbs repeat traffic, and BigQuery's own 24-hour
+query cache already dedupes identical SQL for free; TTLs can be
+volatility-aware (closed months are immutable, "today" is not). **Semantic
+caching of answers is deliberately rejected**: embedding similarity blurs
+exactly what matters here — "Texas last week" and "Texas last month" sit a
+whisker apart in embedding space with entirely different correct answers — and
+a false hit is a confidently wrong number delivered fast, silently bypassing
+the system's grounding guarantee. The safe semantic layer already exists: the
+golden bucket *is* a semantic cache that **teaches instead of replays** —
+retrieval finds the prior interpretation, the model adapts it to the live
+parameters, and execution always runs fresh. Cache-fill is the promotion
+pipeline; lookup is hybrid retrieval; the adjudicator that prevents
+parameter-blur errors is the model itself.
+
 **Cost posture, informed by experience:** development on the free tier hit the
 real limits (20 requests/day/model; and Gemini's prepay billing model) — so
 cost controls are not theoretical here: hard per-query byte caps, bounded
