@@ -98,90 +98,11 @@ Both map to existing seams:
 Legend: solid teal = prototype (implemented), dashed amber = stretch, dashed
 gray = production design (v2).
 
-```mermaid
-flowchart TB
-    classDef proto fill:#e1f5ee,stroke:#0f6e56,color:#04342c
-    classDef stretch fill:#faeeda,stroke:#ba7517,color:#412402,stroke-dasharray:4 3
-    classDef future fill:#f1efe8,stroke:#888780,color:#444441,stroke-dasharray:7 4
+![Architecture diagram](diagrams/architecture.svg)
 
-    MGR(["Store / regional manager"])
-
-    subgraph IFACE[" Interfaces "]
-        CLI["CLI chat REPL<br/>typed confirms · --user id"]
-        WEB["Web app / Slack bot"]
-    end
-
-    subgraph CORE[" Agent service — LangGraph (Python) "]
-        GUARD["Input guard<br/>scope policy + injection heuristics"]
-        CTX["Context assembler<br/>base policy + persona + prefs<br/>+ schema cache + few-shots"]
-        LOOP["Agent loop — tool-calling LLM<br/>recursion limit + per-turn SQL budget"]
-        subgraph TOOLS[" Tools "]
-            TSQL["run_sql"]
-            TSCH["get_schema"]
-            TREP["save_report / list_reports"]
-            TDEL["delete_reports"]
-            TPREF["remember_preference"]
-        end
-        SQLG["SQL guard — sqlglot<br/>SELECT-only · table allowlist ·<br/>LIMIT inject · dry-run · byte cap"]
-        PIIM["PII masker — deterministic<br/>column denylist + regex sweep"]
-        HITL{{"interrupt()<br/>preview matches → typed confirm<br/>ownership enforced in code"}}
-        FINAL["Final report<br/>persona-styled + output PII sweep"]
-    end
-
-    subgraph LLM[" LLM plane "]
-        GEM["Gemini 2.5 Flash<br/>AI Studio · temp 0"]
-        FALL["Retry w/ backoff → fallback model<br/>(2nd Gemini / OpenRouter)"]
-        EMB["Embedding model"]
-    end
-
-    subgraph DATA[" Data plane "]
-        BQ[("BigQuery — read-only<br/>thelook_ecommerce")]
-        APPDB[("SQLite app store<br/>reports · prefs · personas · checkpoints")]
-        FEWS["golden_examples.json<br/>static few-shot stand-in"]
-        LAKE[("Golden bucket — GCS data lake<br/>system of record: trios + lineage")]
-        VIDX[("Serving index — pgvector<br/>hot path · rebuildable from the lake")]
-    end
-
-    subgraph LEARN[" Learning loop — system level "]
-        RETR["Hybrid retrieval<br/>dense + BM25 + rerank"]
-        PROMO["Feedback → curation queue<br/>→ human approval → promote"]
-        NIGHT["Nightly trio validation<br/>dry-run vs schema drift"]
-    end
-
-    subgraph OBSQA[" Observability & QA "]
-        LOGS["Structured JSON traces<br/>trace_id · tokens · bytes · retries"]
-        DASH["LangSmith / OTel<br/>dashboards · alerts · cost"]
-        EVAL["Eval harness<br/>golden questions + LLM judge, CI gate"]
-    end
-
-    MGR --> CLI
-    MGR -.-> WEB
-    CLI --> GUARD
-    GUARD --> CTX --> LOOP
-    LOOP <--> TOOLS
-    TSQL --> SQLG --> BQ
-    BQ --> PIIM --> TSQL
-    TDEL --> HITL -->|"confirmed — own rows only"| APPDB
-    TREP --> APPDB
-    TPREF --> APPDB
-    CTX --- APPDB
-    FEWS --> CTX
-    LOOP --> FINAL --> CLI
-    LOOP -.-> GEM --> FALL
-    LAKE ==>|"hydrate · blue-green rebuild"| VIDX
-    VIDX --- RETR
-    RETR -.->|"top-k trios at query time"| CTX
-    FINAL -.->|"accepted reports"| PROMO --> LAKE
-    NIGHT --> LAKE
-    EMB --- VIDX
-    CORE -.-> LOGS
-    CORE -.-> DASH
-    EVAL -.->|"pre-deploy gate"| CORE
-
-    class CLI,GUARD,CTX,LOOP,TSQL,TSCH,TREP,TDEL,TPREF,SQLG,PIIM,HITL,FINAL,GEM,FALL,BQ,APPDB,LOGS proto
-    class FEWS,EVAL stretch
-    class WEB,LAKE,VIDX,RETR,PROMO,NIGHT,EMB,DASH future
-```
+Diagram source: [diagrams/architecture.d2](diagrams/architecture.d2) (D2,
+diagram-as-code — diffable like the rest of the repo). Regenerate after edits:
+`d2 --layout elk docs/diagrams/architecture.d2 docs/diagrams/architecture.svg`.
 
 ## 3. Requirement-by-requirement design
 
@@ -246,12 +167,30 @@ alternative; a managed vector service is the growth path if the corpus grows
 
 - *Expert ingestion:* analysts author trios directly; near-duplicate checks at
   ingestion keep the corpus clean.
-- *Promotion from production:* when a manager saves, reuses, or endorses a
-  report, the (question, SQL, report) becomes a **candidate** trio → curation
-  queue → **human approval** → verified. The gate is human because the bucket
-  is golden: auto-promotion would let one plausible-but-wrong answer poison
-  every future retrieval. This pipeline *is* the system-level learning loop of
-  requirement 4 — one mechanism, two requirements.
+- *Promotion from production* is a staged funnel, not a single trigger,
+  because user endorsement measures usefulness, not correctness — a manager
+  will save a confidently wrong number. **Stage 0, eligibility (hard filters
+  from the trace):** the user saved the report (a deliberate action, stronger
+  than a thumbs-up); the grounding check passes (every number in the answer
+  appears in a tool result of the same turn — machine-checkable); no guard or
+  masking anomalies; the SQL is non-trivial and still dry-runs clean.
+  **Stage 1, value scoring:** the strongest signal is *retrieval weakness at
+  answer time* — low top-k similarity means the agent succeeded without
+  exemplar help, i.e. the corpus has a gap exactly here, flagged by the
+  retrieval system's own uncertainty; plus embedding distance to existing
+  trios (near-duplicates add nothing), cluster frequency across users, and
+  report re-opens (retention). **Stage 2, LLM pre-screen:** does the SQL match
+  the question's intent, and does the turn contain transferable interpretation
+  logic rather than a one-off lookup? The judge also *drafts* the trio —
+  canonicalized question, cleaned SQL, analyst notes extracted from the
+  reasoning trace — so the curator edits rather than writes. **Stage 3, human
+  approval:** the gate is human because the bucket is golden — one
+  plausible-but-wrong exemplar poisons every future retrieval. Curator
+  acceptance rate tunes the funnel (too high → filters too strict; too low →
+  wasting curator time), and post-promotion impact is measurable as rising
+  first-attempt SQL validity near the new trio. This pipeline *is* the
+  system-level learning loop of requirement 4 — one mechanism, two
+  requirements.
 - *Maintenance:* a nightly job dry-runs every trio's SQL (free on BigQuery)
   and quarantines breakage from schema drift — the silent killer of exemplar
   corpora; embedding upgrades re-embed with version tags for blue/green index

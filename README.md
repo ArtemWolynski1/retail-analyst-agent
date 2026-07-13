@@ -81,6 +81,7 @@ ruff check . && ruff format .          # lint + format
 mypy && pyrefly check agent/           # both type checkers
 pytest                                 # offline suite (48 tests)
 pre-commit install                     # optional: same gates on every commit
+d2 --layout elk docs/diagrams/architecture.d2 docs/diagrams/architecture.svg  # regen diagram
 ```
 
 ## Project layout

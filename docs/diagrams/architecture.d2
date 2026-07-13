@@ -1,0 +1,109 @@
+direction: down
+
+classes: {
+  proto: {
+    style: {fill: "#E8F5EE"; stroke: "#0F6E56"; font-color: "#04342C"; border-radius: 8; shadow: false}
+  }
+  stretch: {
+    style: {fill: "#FAEEDA"; stroke: "#BA7517"; font-color: "#412402"; stroke-dash: 3; border-radius: 8}
+  }
+  future: {
+    style: {fill: "#F3F2EE"; stroke: "#8B8A82"; font-color: "#4A4A46"; stroke-dash: 5; border-radius: 8}
+  }
+  plane: {
+    style: {fill: "transparent"; stroke: "#B9B7AE"; stroke-dash: 5; border-radius: 12; font-color: "#5F5E5A"; bold: false}
+  }
+}
+
+legend: Legend {
+  class: plane
+  near: top-right
+  p: prototype (implemented) {class: proto}
+  s: stretch {class: stretch}
+  f: production v2 (design) {class: future}
+}
+
+mgr: Store / regional manager {shape: person; class: proto; near: top-center}
+
+iface: Interfaces {
+  class: plane
+  cli: CLI chat REPL\ntyped confirms · --user {class: proto}
+  web: Web app / Slack bot {class: future}
+}
+
+core: "Agent service — LangGraph (Python)" {
+  class: plane
+  guard: Input guard\nscope + injection heuristics {class: proto}
+  ctx: Context assembler\ninstructions + schema\n+ examples + persona + prefs {class: proto}
+  loop: Agent loop\nrecursion limit · SQL budget {class: proto}
+  tools: Tools {
+    class: plane
+    run_sql: run_sql {class: proto}
+    get_schema: get_schema {class: proto}
+    reports: save / list reports {class: proto}
+    delete: delete_reports {class: proto}
+    prefs: remember_preference {class: proto}
+  }
+  qb: "Query boundary (deterministic)" {
+    class: plane
+    sqlg: SQL guard (sqlglot)\nSELECT-only · allowlist\ndry-run · byte cap {class: proto}
+    piim: PII masker\ncolumn denylist + regex {class: proto}
+  }
+  hitl: "interrupt()\npreview → typed confirm" {shape: hexagon; class: proto}
+  final: Final answer\npersona-styled · PII sweep {class: proto}
+
+  guard -> ctx -> loop
+  loop <-> tools
+  tools.run_sql -> qb.sqlg
+  tools.delete -> hitl
+  loop -> final
+}
+
+llm: LLM plane {
+  class: plane
+  gem: Gemini 2.5 Flash\ntemp 0 {class: proto}
+  fall: Fallback chain\nbackoff → alt model {class: proto}
+  emb: Embedding model {class: future}
+  gem -> fall
+}
+
+data: Data plane {
+  class: plane
+  bq: BigQuery (read-only)\nthelook_ecommerce {shape: cylinder; class: proto}
+  appdb: SQLite app store\nreports · prefs · personas\n· checkpoints {shape: cylinder; class: proto}
+  fews: golden_examples.json\nstatic few-shots {class: stretch}
+  lake: Golden bucket — GCS lake\nsystem of record {shape: cylinder; class: future}
+  vidx: Serving index (pgvector)\nhot path · rebuildable {shape: cylinder; class: future}
+  lake -> vidx: hydrate · blue-green {style: {stroke-dash: 5}}
+}
+
+learn: "Learning loop — system level (v2)" {
+  class: plane
+  retr: Hybrid retrieval\ndense + BM25 + rerank {class: future}
+  promo: Curation queue\nfeedback → promote {class: future}
+  night: Nightly validation\ndry-run vs drift {class: future}
+}
+
+obs: Observability & QA {
+  class: plane
+  logs: JSON traces\nturn_id · prompt_version {class: proto}
+  dash: LangSmith / OTel\ndashboards · alerts {class: future}
+  eval: Eval harness\ngolden Qs + LLM judge {class: stretch}
+}
+
+mgr -> iface.cli
+iface.cli -> core.guard
+core.qb.sqlg -> data.bq
+data.bq -> core.qb.piim: rows
+core.qb.piim -> core.loop: masked rows
+core.hitl -> data.appdb: confirmed · own rows only
+core.tools.reports -> data.appdb
+core.tools.prefs -> data.appdb
+data.fews -> core.ctx
+core.loop -> llm.gem: {style: {stroke-dash: 5}}
+data.vidx -> learn.retr
+learn.retr -> core.ctx: top-k trios (v2) {style: {stroke-dash: 5}}
+core.final -> learn.promo: accepted reports {style: {stroke-dash: 5}}
+learn.promo -> data.lake
+learn.night -> data.lake
+core.final -> mgr: answer
