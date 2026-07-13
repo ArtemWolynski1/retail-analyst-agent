@@ -8,6 +8,19 @@ unedited. Note: `thelook_ecommerce` regenerates continuously, so figures drift
 from day to day. The verbose tool trace prints after each turn completes, so
 `→`/`←` lines can appear after the turn's UI output.
 
+**Reading the traces:** `you ›` your prompt · `→` a tool call · `←` its result · `🧠` the model's reasoning (shown only with `--debug`).
+
+| # | Scene | What it demonstrates | Requirement |
+|:-:|---|---|---|
+| 1 | Schema orientation | answers database-structure questions with no SQL | capability |
+| 2 | Revenue definition | a golden exemplar shapes the SQL (`Complete + Shipped`) | hybrid intelligence |
+| 3 | The "why" question | multi-query decomposition, then **corrects a false premise from data** | hybrid intelligence · grounding |
+| 4 | PII defense-in-depth | policy refusal, then deterministic masking of retrieved emails | PII masking |
+| 5 | Natural-language delete | filter → preview → typed confirm; both cancel and confirm | high-stakes oversight |
+| 6 | Preference memory | a preference set once survives a full restart | learning loop |
+| 7 | Persona hot-swap | company tone changes mid-session, no redeploy | agility |
+| 8 | Model failover | primary model down → fallback, conversation intact | resilience |
+
 ## 1 · Schema orientation (no SQL needed)
 
 ```
@@ -56,6 +69,15 @@ value with per-user normalization (taught by the comparative exemplar), then —
 the moment worth reading twice — discovers the question's premise is wrong and
 says so, instead of inventing a justification for a gap that doesn't exist.
 
+![The flagship "why" scene: the agent decomposes the comparison and corrects the question's false premise from data](img/transcript-flagship.svg)
+
+> [!TIP]
+> This is the strongest evidence for the grounding requirement: asked a *loaded*
+> question, the agent answered "your premise is wrong, here's the data" instead
+> of confabulating a cause. The full `--debug` trace it was distilled from:
+
+<details><summary>Full verbatim <code>--debug</code> trace</summary>
+
 ```
 you › Why are users in Texas underspending compared to California?
 ── model call 1 ──
@@ -92,6 +114,8 @@ value.
  Texas       58.89           0.69             85.41
 ```
 
+</details>
+
 ## 4 · PII: defense in depth
 
 Layer 1 — policy refusal on a casual ask (with a useful alternative offered):
@@ -118,6 +142,12 @@ As you can see, the email addresses are masked as «email masked» in the query
 results.
 ```
 
+> [!IMPORTANT]
+> The email column was *retrieved by the SQL* and still never reached the model
+> as plaintext — the masker sits between BigQuery and the model. This is the
+> requirement's exact clause ("even if the SQL query retrieves it") on screen,
+> with the tool footer counting `PII values masked: 3`.
+
 (Layer 3, the regex sweep over the final answer, plus injection-resistance
 cases, are covered by the live policy suite — `pytest -m live`, 4/4.)
 
@@ -135,6 +165,12 @@ read-only SELECT queries.
 The model translates the user's words straight into filter arguments
 (`search='revenue'`, `created_on=<today>`) — it never asks for report ids. The
 platform previews exactly what will die; only the exact phrase proceeds.
+
+> [!WARNING]
+> Deletion is the one destructive action, so it physically stops at a
+> `LangGraph interrupt()` — not the model promising to ask first. The preview
+> shows exactly what matches; the typed phrase includes the count; anything
+> else (below, `no`) cancels.
 
 ```
 you › Save that as a report titled 'Quarterly revenue check'.
