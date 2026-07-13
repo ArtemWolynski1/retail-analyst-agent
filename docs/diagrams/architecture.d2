@@ -74,14 +74,21 @@ data: Data plane {
   fews: golden_examples.json\nstatic few-shots {class: stretch}
   lake: Golden bucket — GCS lake\nsystem of record {shape: cylinder; class: future}
   vidx: Serving index (pgvector)\nhot path · rebuildable {shape: cylinder; class: future}
-  lake -> vidx: hydrate · blue-green {style: {stroke-dash: 5}}
+  lake -> vidx: batch embed (versioned)\nblue-green hydrate {style: {stroke-dash: 5}}
 }
 
 learn: "Learning loop — system level (v2)" {
   class: plane
-  retr: Hybrid retrieval\ndense + BM25 + rerank {class: future}
-  promo: Curation queue\nfeedback → promote {class: future}
-  night: Nightly validation\ndry-run vs drift {class: future}
+  ret: "Query-time retrieval — 50–200 ms budget" {
+    class: plane
+    emb: Embed question\nversion-tagged model {class: future}
+    hyb: Hybrid search\ndense ANN + BM25 keyword {class: future}
+    filt: Metadata filter\ntables · metric domain {class: future}
+    rank: Rerank\ntop ~20 → top 3 {class: future}
+    emb -> hyb -> filt -> rank
+  }
+  promo: Curation funnel\neligibility → value score\n→ LLM pre-screen → human gate {class: future}
+  night: Nightly maintenance\ndry-run every trio · quarantine drift\nre-embed on model upgrade {class: future}
 }
 
 obs: Observability & QA {
@@ -101,8 +108,10 @@ core.tools.reports -> data.appdb
 core.tools.prefs -> data.appdb
 data.fews -> core.ctx
 core.loop -> llm.gem: {style: {stroke-dash: 5}}
-data.vidx -> learn.retr
-learn.retr -> core.ctx: top-k trios (v2) {style: {stroke-dash: 5}}
+core.ctx -> learn.ret.emb: question (v2) {style: {stroke-dash: 5}}
+learn.ret.emb -> llm.emb {style: {stroke-dash: 5}}
+data.vidx -> learn.ret.hyb
+learn.ret.rank -> core.ctx: top-3 trios, compressed\nQ + SQL + analyst notes {style: {stroke-dash: 5}}
 core.final -> learn.promo: accepted reports {style: {stroke-dash: 5}}
 learn.promo -> data.lake
 learn.night -> data.lake
