@@ -257,10 +257,14 @@ also covers PII-shaped text from any other source. Aggregates are naturally
 unaffected (`COUNT(DISTINCT email)` returns numbers), so masking never breaks
 legitimate analysis. The phone pattern requires phone-*shaped* structure so
 decimals, coordinates, dates, and order ids never false-positive (pinned by
-tests: `158.9724` survives). The spec names phones and emails; this dataset
-also carries names, street addresses, and geo coordinates — the denylist is
-one env var to extend, and that scoping decision is exactly the kind of
-per-client compliance call the config boundary exists for.
+tests: `158.9724` survives). **Scope is deliberately exactly the spec's fields
+— emails and phone numbers.** Other columns (names, street addresses, geo)
+flow through unmasked, because this is an internal analytics tool where a
+regional manager legitimately queries by geography; the instructions are honest
+about this so the agent uses those fields for analysis rather than falsely
+claiming they are protected. `PII_COLUMNS` is the single config knob a
+deployment turns if a client's compliance regime needs more masked — a
+per-client call the boundary exists to make, without code changes.
 
 One adjacent leak class is closed by construction: the model's reasoning
 (thinking summaries) is filtered out of every rendered answer — chain-of-
