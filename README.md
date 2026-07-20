@@ -120,6 +120,18 @@ pre-commit install                     # optional: same gates on every commit
 d2 --layout elk docs/diagrams/architecture.d2 docs/diagrams/architecture.svg  # regen diagram
 ```
 
+### Postgres lane (optional)
+
+SQLite is the default everywhere. Setting `DATABASE_URL` switches reports,
+preferences, personas, and conversation checkpoints to Postgres (with pgvector,
+which also serves the golden-bucket retrieval index) — same store interface,
+production dialect:
+
+```bash
+docker compose up -d db     # Postgres 17 + pgvector on localhost:5433
+DATABASE_URL=postgresql://agent:agent@localhost:5433/agent python -m agent.cli --user alice
+```
+
 ## Project layout
 
 ```

@@ -5,7 +5,7 @@ from pathlib import Path
 from google.cloud import bigquery
 
 from agent.config import Settings
-from agent.store import Store
+from agent.store import StoreProtocol
 from agent.trace import Trace
 
 
@@ -43,7 +43,7 @@ class RuntimeContext:
     user_id: str
     schema: SchemaCache
     examples: list[Trio]
-    store: Store | None = None
+    store: StoreProtocol | None = None
     budget: TurnBudget = field(default_factory=TurnBudget)
     trace: Trace = field(default_factory=lambda: Trace(None))
     debug: bool = False

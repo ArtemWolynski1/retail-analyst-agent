@@ -18,6 +18,7 @@ class Settings:
     max_result_rows: int
     sqlite_path: str
     checkpoint_path: str
+    database_url: str | None
     log_dir: str
     pii_columns: tuple[str, ...]
     sql_attempts_per_turn: int
@@ -36,6 +37,7 @@ def load_settings() -> Settings:
         max_result_rows=int(os.getenv("MAX_RESULT_ROWS", "50")),
         sqlite_path=os.getenv("SQLITE_PATH", ".data/agent.sqlite"),
         checkpoint_path=os.getenv("CHECKPOINT_PATH", ".data/checkpoints.sqlite"),
+        database_url=os.getenv("DATABASE_URL") or None,
         log_dir=os.getenv("LOG_DIR", ".data/logs"),
         pii_columns=tuple(
             c.strip().lower() for c in os.getenv("PII_COLUMNS", "email,phone,phone_number").split(",") if c.strip()

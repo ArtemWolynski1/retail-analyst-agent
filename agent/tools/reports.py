@@ -2,11 +2,11 @@ from langchain_core.tools import tool
 from langgraph.types import interrupt
 
 from agent.runtime import RuntimeContext
-from agent.store import Store
+from agent.store import StoreProtocol
 
 
 def resolve_delete_targets(
-    store: Store, user_id: str, ids: list[str] | None, search: str, created_on: str
+    store: StoreProtocol, user_id: str, ids: list[str] | None, search: str, created_on: str
 ) -> list[dict] | None:
     """None means 'no criteria given' — distinct from 'criteria matched nothing'."""
     if ids:

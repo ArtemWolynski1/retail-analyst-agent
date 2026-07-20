@@ -2,6 +2,28 @@ import sqlite3
 import uuid
 from contextlib import closing
 from pathlib import Path
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from agent.config import Settings
+
+
+class StoreProtocol(Protocol):
+    """The store interface, structurally: any class with these methods is a
+    store — no inheritance required (PEP 544). Store (SQLite) and PostgresStore
+    both conform; the type checkers verify it wherever an instance meets a
+    StoreProtocol-typed seam."""
+
+    def save_report(self, user_id: str, title: str, question: str, sql: str, report_md: str) -> str: ...
+    def list_reports(self, user_id: str, search: str = "", created_on: str = "") -> list[dict]: ...
+    def get_reports_by_ids(self, user_id: str, ids: list[str]) -> list[dict]: ...
+    def delete_by_ids(self, user_id: str, ids: list[str]) -> int: ...
+    def add_preference(self, user_id: str, note: str) -> None: ...
+    def get_preferences(self, user_id: str, limit: int = 10) -> list[str]: ...
+    def get_active_persona(self) -> dict | None: ...
+    def set_active_persona(self, name: str) -> bool: ...
+    def list_personas(self) -> list[dict]: ...
+
 
 # Personas are diffs against the prompt's <style_defaults> — they should only
 # say what they change, never restate the defaults.
@@ -136,3 +158,13 @@ class Store:
         with closing(self._conn()) as conn:
             rows = conn.execute("SELECT name, is_active FROM personas ORDER BY name").fetchall()
         return [dict(row) for row in rows]
+
+
+def make_store(settings: "Settings") -> StoreProtocol:
+    """SQLite by default (zero-infra reviewer path, unit tests); Postgres when
+    DATABASE_URL is set. Lazy import keeps psycopg optional on the SQLite path."""
+    if settings.database_url:
+        from agent.store_pg import PostgresStore
+
+        return PostgresStore(settings.database_url)
+    return Store(settings.sqlite_path)

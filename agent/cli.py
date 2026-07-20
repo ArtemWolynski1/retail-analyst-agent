@@ -15,7 +15,7 @@ from agent.context import build_system_prompt, load_instructions, prompt_version
 from agent.graph import build_agent, open_checkpointer
 from agent.runtime import RuntimeContext, TurnBudget, load_examples
 from agent.safety.pii import mask_text
-from agent.store import Store
+from agent.store import make_store
 from agent.tools.schema import fetch_schema
 from agent.trace import Trace
 
@@ -111,7 +111,7 @@ def main() -> int:
     with console.status("Loading dataset schema…"):
         schema = fetch_schema(client, settings)
     examples = load_examples(EXAMPLES_PATH)
-    store = Store(settings.sqlite_path)
+    store = make_store(settings)
     trace = Trace(settings.log_dir)
     trace.event("session_start", user=args.user, model=settings.agent_model, examples=len(examples))
     ctx = RuntimeContext(

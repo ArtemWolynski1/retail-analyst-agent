@@ -12,3 +12,26 @@ services:
       - ./.data:/app/.data
     stdin_open: true
     tty: true
+
+  # Production-lane storage: Postgres with pgvector (reports, preferences,
+  # personas, LangGraph checkpoints, and the golden-bucket serving index).
+  # Opt-in — the app uses it only when DATABASE_URL is set; SQLite stays the
+  # zero-infra default. Host port 5433 avoids clashing with a local Postgres.
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+      POSTGRES_DB: agent
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  pgdata:
