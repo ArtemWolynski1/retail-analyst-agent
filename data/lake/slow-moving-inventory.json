@@ -1,0 +1,13 @@
+{
+  "id": "slow-moving-inventory",
+  "question": "Which categories have the most slow-moving inventory?",
+  "sql": "SELECT product_category, COUNT(*) AS unsold_items_90d, ROUND(SUM(cost), 2) AS capital_tied_up FROM `bigquery-public-data.thelook_ecommerce.inventory_items` WHERE sold_at IS NULL AND created_at < TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)) GROUP BY product_category ORDER BY unsold_items_90d DESC LIMIT 15",
+  "analyst_notes": "Slow-moving = in stock (sold_at IS NULL) AND received over 90 days ago — unsold recent stock is normal replenishment, not a problem. Cost, not retail price, measures the capital tied up.",
+  "tables_used": [
+    "inventory_items"
+  ],
+  "metric_domain": "inventory",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

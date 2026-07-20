@@ -1,0 +1,12 @@
+{
+  "id": "revenue-definition",
+  "question": "What was our revenue last month?",
+  "sql": "SELECT ROUND(SUM(sale_price), 2) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE status IN ('Complete', 'Shipped') AND created_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH), MONTH)) AND created_at < TIMESTAMP(DATE_TRUNC(CURRENT_DATE(), MONTH))",
+  "analyst_notes": "Revenue counts only items with status Complete or Shipped. Cancelled and Returned items are excluded (they inflate the naive sum by roughly a quarter). Processing items count only toward 'projected revenue' and must be labeled as such when included.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "artem"
+}

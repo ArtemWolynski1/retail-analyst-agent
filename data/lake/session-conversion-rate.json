@@ -1,0 +1,13 @@
+{
+  "id": "session-conversion-rate",
+  "question": "What is our session conversion rate?",
+  "sql": "SELECT ROUND(SAFE_DIVIDE(COUNT(DISTINCT IF(event_type = 'purchase', session_id, NULL)), COUNT(DISTINCT session_id)) * 100, 2) AS session_conversion_pct FROM `bigquery-public-data.thelook_ecommerce.events`",
+  "analyst_notes": "Conversion = sessions containing a purchase event over ALL sessions — count DISTINCT session_id, never raw events (one session fires many events). This is session conversion; user conversion (buyers over visitors) is a different, higher number.",
+  "tables_used": [
+    "events"
+  ],
+  "metric_domain": "web",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

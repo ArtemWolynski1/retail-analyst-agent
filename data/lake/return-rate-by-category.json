@@ -1,0 +1,14 @@
+{
+  "id": "return-rate-by-category",
+  "question": "Which product categories get returned the most?",
+  "sql": "SELECT p.category, ROUND(SAFE_DIVIDE(COUNTIF(oi.status = 'Returned'), COUNTIF(oi.status IN ('Complete', 'Shipped', 'Returned'))) * 100, 1) AS return_rate_pct, COUNTIF(oi.status = 'Returned') AS returned_items FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.products` p ON p.id = oi.product_id GROUP BY p.category ORDER BY return_rate_pct DESC LIMIT 15",
+  "analyst_notes": "Return rate denominator = items that COULD have been returned (Complete + Shipped + Returned). Including Cancelled or Processing in the denominator deflates the rate. Show absolute counts too — a 30% rate on 10 items is noise.",
+  "tables_used": [
+    "order_items",
+    "products"
+  ],
+  "metric_domain": "returns",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

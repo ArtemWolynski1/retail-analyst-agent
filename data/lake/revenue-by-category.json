@@ -1,0 +1,14 @@
+{
+  "id": "revenue-by-category",
+  "question": "Which product categories bring in the most revenue?",
+  "sql": "SELECT p.category, ROUND(SUM(oi.sale_price), 2) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.products` p ON p.id = oi.product_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY p.category ORDER BY revenue DESC LIMIT 15",
+  "analyst_notes": "Category revenue uses the standard revenue definition (Complete + Shipped). Category lives on products, so join through product_id; do not use inventory_items.product_category here — it denormalizes the same value but adds a wider join for nothing.",
+  "tables_used": [
+    "order_items",
+    "products"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

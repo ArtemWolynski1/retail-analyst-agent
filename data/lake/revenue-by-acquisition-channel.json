@@ -1,0 +1,14 @@
+{
+  "id": "revenue-by-acquisition-channel",
+  "question": "How much revenue does each marketing channel generate?",
+  "sql": "SELECT u.traffic_source AS acquisition_channel, ROUND(SUM(oi.sale_price), 2) AS revenue, COUNT(DISTINCT u.id) AS buyers FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY 1 ORDER BY revenue DESC",
+  "analyst_notes": "users.traffic_source is the ACQUISITION channel (how the user originally arrived); events.traffic_source is per-session. 'Revenue by channel' means lifetime attribution to acquisition unless the user asks about session attribution — say which one you used.",
+  "tables_used": [
+    "order_items",
+    "users"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

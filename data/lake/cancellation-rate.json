@@ -1,0 +1,13 @@
+{
+  "id": "cancellation-rate",
+  "question": "What share of orders get cancelled?",
+  "sql": "SELECT ROUND(SAFE_DIVIDE(COUNTIF(status = 'Cancelled'), COUNT(*)) * 100, 2) AS cancellation_rate_pct, COUNTIF(status = 'Cancelled') AS cancelled, COUNT(*) AS all_orders FROM `bigquery-public-data.thelook_ecommerce.orders`",
+  "analyst_notes": "Rate denominators use ALL orders regardless of status — a rate of cancelled over completed would overstate. Always return the raw counts next to the percentage so small denominators are visible.",
+  "tables_used": [
+    "orders"
+  ],
+  "metric_domain": "orders",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

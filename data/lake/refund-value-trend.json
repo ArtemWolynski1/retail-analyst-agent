@@ -1,0 +1,13 @@
+{
+  "id": "refund-value-trend",
+  "question": "How much money are we losing to returns each month?",
+  "sql": "SELECT FORMAT_TIMESTAMP('%Y-%m', returned_at) AS month, ROUND(SUM(sale_price), 2) AS refunded_value, COUNT(*) AS returned_items FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE status = 'Returned' AND returned_at IS NOT NULL GROUP BY month ORDER BY month DESC LIMIT 12",
+  "analyst_notes": "Refund value = sale_price of Returned items, bucketed by returned_at. This is gross refund value — it ignores restocking and resale recovery; label it as such rather than calling it 'losses'.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "returns",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "repeat-purchase-rate",
+  "question": "What share of our customers are repeat buyers?",
+  "sql": "WITH buyer_orders AS (SELECT user_id, COUNT(DISTINCT order_id) AS orders FROM `bigquery-public-data.thelook_ecommerce.orders` WHERE status != 'Cancelled' GROUP BY user_id) SELECT ROUND(SAFE_DIVIDE(COUNTIF(orders >= 2), COUNT(*)) * 100, 1) AS repeat_rate_pct, COUNT(*) AS buyers FROM buyer_orders",
+  "analyst_notes": "Repeat rate = buyers with 2+ non-cancelled orders over ALL buyers (not all users — users who never bought dilute it into a different metric). Cancelled orders don't count as purchases.",
+  "tables_used": [
+    "orders"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

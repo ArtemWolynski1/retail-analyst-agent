@@ -1,0 +1,13 @@
+{
+  "id": "fulfillment-lag-trend",
+  "question": "Are we getting faster at shipping orders?",
+  "sql": "SELECT FORMAT_TIMESTAMP('%Y-%m', created_at) AS month, ROUND(AVG(TIMESTAMP_DIFF(shipped_at, created_at, HOUR)), 1) AS avg_hours_to_ship FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE shipped_at IS NOT NULL AND created_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 MONTH), MONTH)) GROUP BY month ORDER BY month",
+  "analyst_notes": "Fulfillment lag = order to shipment, shipped items only. The latest month biases FAST: its slow orders haven't shipped yet, so they're excluded — recent months always look better than they are. Flag this censoring.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "logistics",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

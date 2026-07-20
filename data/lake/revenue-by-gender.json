@@ -1,0 +1,14 @@
+{
+  "id": "revenue-by-gender",
+  "question": "How does revenue split between men and women?",
+  "sql": "SELECT u.gender, ROUND(SUM(oi.sale_price), 2) AS revenue, COUNT(DISTINCT u.id) AS buyers, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT u.id), 2) AS spend_per_buyer FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY u.gender",
+  "analyst_notes": "Use users.gender (the buyer), not orders.gender (the department shopped — a mislabeled column in this dataset). Per-buyer spend alongside totals separates population size from behavior.",
+  "tables_used": [
+    "order_items",
+    "users"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

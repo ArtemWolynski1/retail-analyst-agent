@@ -1,0 +1,13 @@
+{
+  "id": "avg-items-per-order",
+  "question": "How many items does an average order contain?",
+  "sql": "SELECT ROUND(AVG(num_of_item), 2) AS avg_items_per_order FROM `bigquery-public-data.thelook_ecommerce.orders`",
+  "analyst_notes": "orders.num_of_item is precomputed — no need to count order_items rows. Use the precomputed field unless the question needs per-status item filtering, which the orders table cannot see.",
+  "tables_used": [
+    "orders"
+  ],
+  "metric_domain": "orders",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

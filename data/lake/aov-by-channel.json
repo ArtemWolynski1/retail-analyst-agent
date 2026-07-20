@@ -1,0 +1,14 @@
+{
+  "id": "aov-by-channel",
+  "question": "Does average order value differ by marketing channel?",
+  "sql": "SELECT u.traffic_source AS acquisition_channel, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT oi.order_id), 2) AS avg_order_value, COUNT(DISTINCT oi.order_id) AS orders FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY 1 ORDER BY avg_order_value DESC",
+  "analyst_notes": "AOV per segment: revenue over distinct orders within each segment, revenue statuses only. Show order counts — channels with few orders have unstable AOV. Acquisition attribution (users.traffic_source), per the channel convention.",
+  "tables_used": [
+    "order_items",
+    "users"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

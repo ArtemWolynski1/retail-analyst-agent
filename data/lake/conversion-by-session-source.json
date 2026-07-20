@@ -1,0 +1,13 @@
+{
+  "id": "conversion-by-session-source",
+  "question": "Which traffic source converts best?",
+  "sql": "SELECT traffic_source, COUNT(DISTINCT session_id) AS sessions, ROUND(SAFE_DIVIDE(COUNT(DISTINCT IF(event_type = 'purchase', session_id, NULL)), COUNT(DISTINCT session_id)) * 100, 2) AS conversion_pct FROM `bigquery-public-data.thelook_ecommerce.events` GROUP BY traffic_source ORDER BY conversion_pct DESC",
+  "analyst_notes": "Session-level attribution: events.traffic_source credits the session's source. Contrast with users.traffic_source (acquisition) — 'which channel converts' is session-level, 'which channel brings valuable customers' is acquisition-level.",
+  "tables_used": [
+    "events"
+  ],
+  "metric_domain": "web",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

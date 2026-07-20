@@ -1,0 +1,13 @@
+{
+  "id": "top-customers-by-spend",
+  "question": "Who are our top 10 customers by total spend?",
+  "sql": "SELECT u.id AS customer_id, CONCAT(u.first_name, ' ', u.last_name) AS customer, u.state, ROUND(SUM(oi.sale_price), 2) AS total_spend, COUNT(DISTINCT oi.order_id) AS orders FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY 1, 2, 3 ORDER BY total_spend DESC LIMIT 10",
+  "analyst_notes": "Identify customers by id and name, never by email or address. Spend uses the standard revenue definition (Complete + Shipped). Order count alongside spend distinguishes whales from frequent mid-size buyers.",
+  "tables_used": [
+    "order_items",
+    "users"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "artem"
+}

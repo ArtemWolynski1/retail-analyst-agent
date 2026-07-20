@@ -1,0 +1,13 @@
+{
+  "id": "returned-orders-trend",
+  "question": "How many orders were returned each month this year?",
+  "sql": "SELECT FORMAT_TIMESTAMP('%Y-%m', returned_at) AS month, COUNT(*) AS returned_orders FROM `bigquery-public-data.thelook_ecommerce.orders` WHERE status = 'Returned' AND returned_at >= TIMESTAMP(DATE_TRUNC(CURRENT_DATE(), YEAR)) GROUP BY month ORDER BY month",
+  "analyst_notes": "Trend by RETURN date (returned_at), not order date — a January order returned in March is a March return event. Which axis matters changes the story; state which one you used.",
+  "tables_used": [
+    "orders"
+  ],
+  "metric_domain": "returns",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

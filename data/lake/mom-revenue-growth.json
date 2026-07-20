@@ -1,0 +1,13 @@
+{
+  "id": "mom-revenue-growth",
+  "question": "How fast is revenue growing month over month?",
+  "sql": "WITH monthly AS (SELECT DATE_TRUNC(DATE(created_at), MONTH) AS month, SUM(sale_price) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE status IN ('Complete', 'Shipped') GROUP BY month) SELECT month, ROUND(revenue, 2) AS revenue, ROUND(SAFE_DIVIDE(revenue - LAG(revenue) OVER (ORDER BY month), LAG(revenue) OVER (ORDER BY month)) * 100, 1) AS mom_growth_pct FROM monthly ORDER BY month DESC LIMIT 13",
+  "analyst_notes": "Growth needs LAG over ordered months. The current month is partial — its 'decline' is an artifact; either exclude it or label it. Growth percentages on small early months are wild; show revenue next to the rate.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

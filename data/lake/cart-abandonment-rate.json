@@ -1,0 +1,13 @@
+{
+  "id": "cart-abandonment-rate",
+  "question": "What share of carts get abandoned?",
+  "sql": "WITH cart_sessions AS (SELECT session_id, COUNTIF(event_type = 'cart') > 0 AS has_cart, COUNTIF(event_type = 'purchase') > 0 AS has_purchase FROM `bigquery-public-data.thelook_ecommerce.events` GROUP BY session_id) SELECT ROUND(SAFE_DIVIDE(COUNTIF(has_cart AND NOT has_purchase), COUNTIF(has_cart)) * 100, 1) AS cart_abandonment_pct, COUNTIF(has_cart) AS cart_sessions FROM cart_sessions",
+  "analyst_notes": "Abandonment = sessions that carted but never purchased, over carting sessions. Session-scoped: a user who carts today and buys tomorrow counts as an abandoned cart today — this proxy overstates true abandonment, note it.",
+  "tables_used": [
+    "events"
+  ],
+  "metric_domain": "web",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

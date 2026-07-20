@@ -1,0 +1,13 @@
+{
+  "id": "average-order-value",
+  "question": "What is our average order value?",
+  "sql": "SELECT ROUND(SUM(sale_price) / COUNT(DISTINCT order_id), 2) AS avg_order_value FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE status IN ('Complete', 'Shipped')",
+  "analyst_notes": "AOV = revenue / distinct orders, on revenue-counting statuses only. Never AVG(sale_price) — that is average ITEM price, not order value; multi-item orders make the two diverge badly.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "profit-margin-by-category",
+  "question": "Which categories have the best profit margin?",
+  "sql": "SELECT ii.product_category AS category, ROUND(SUM(oi.sale_price - ii.cost), 2) AS profit, ROUND(SAFE_DIVIDE(SUM(oi.sale_price - ii.cost), SUM(oi.sale_price)) * 100, 1) AS margin_pct FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.inventory_items` ii ON ii.id = oi.inventory_item_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY category ORDER BY margin_pct DESC LIMIT 15",
+  "analyst_notes": "Realized margin joins each sold item to ITS inventory unit (inventory_item_id) for the actual cost — not products.cost, which is the current catalog cost and drifts from what the sold unit cost. Margin % uses SAFE_DIVIDE: categories can have zero revenue in a window.",
+  "tables_used": [
+    "order_items",
+    "inventory_items"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

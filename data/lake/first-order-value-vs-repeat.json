@@ -1,0 +1,13 @@
+{
+  "id": "first-order-value-vs-repeat",
+  "question": "Do repeat customers spend more per order than first-time buyers?",
+  "sql": "WITH ranked AS (SELECT user_id, order_id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY MIN(created_at)) AS order_rank, SUM(sale_price) AS order_value FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE status IN ('Complete', 'Shipped') GROUP BY user_id, order_id) SELECT IF(order_rank = 1, 'first order', 'repeat order') AS order_type, ROUND(AVG(order_value), 2) AS avg_order_value, COUNT(*) AS orders FROM ranked GROUP BY order_type",
+  "analyst_notes": "Rank each user's orders by time (ROW_NUMBER over MIN(created_at) per order), then compare first vs subsequent order values. Aggregate to order level BEFORE averaging — item-level averages weight big orders wrong.",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

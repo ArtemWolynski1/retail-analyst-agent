@@ -1,0 +1,13 @@
+{
+  "id": "avg-delivery-time",
+  "question": "How long does delivery take on average?",
+  "sql": "SELECT ROUND(AVG(TIMESTAMP_DIFF(delivered_at, shipped_at, HOUR)) / 24, 1) AS avg_ship_to_door_days FROM `bigquery-public-data.thelook_ecommerce.order_items` WHERE delivered_at IS NOT NULL AND shipped_at IS NOT NULL",
+  "analyst_notes": "Delivery time = shipped_at to delivered_at, over DELIVERED items only — undelivered items have NULLs and silently vanish from AVG, which is correct here but say so (survivorship: slow in-transit items aren't counted yet).",
+  "tables_used": [
+    "order_items"
+  ],
+  "metric_domain": "logistics",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

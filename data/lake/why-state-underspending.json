@@ -1,0 +1,13 @@
+{
+  "id": "why-state-underspending",
+  "question": "Why are users in Texas underspending compared to California?",
+  "sql": "SELECT u.state, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT u.id), 2) AS spend_per_user, ROUND(COUNT(DISTINCT oi.order_id) / COUNT(DISTINCT u.id), 2) AS orders_per_user, ROUND(SUM(oi.sale_price) / COUNT(DISTINCT oi.order_id), 2) AS avg_order_value FROM `bigquery-public-data.thelook_ecommerce.users` u LEFT JOIN `bigquery-public-data.thelook_ecommerce.order_items` oi ON oi.user_id = u.id AND oi.status IN ('Complete', 'Shipped') WHERE u.state IN ('Texas', 'California') GROUP BY u.state",
+  "analyst_notes": "'Why' questions are never one query. Decompose the gap: spend per user = order frequency x average order value, so first find WHICH factor drives the difference, then drill into that factor (category mix, age demographics, traffic_source cohorts). Compare per-user rates, never raw state totals - state populations differ. Conclude with the dominant factor and note what was ruled out.",
+  "tables_used": [
+    "users",
+    "order_items"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "artem"
+}

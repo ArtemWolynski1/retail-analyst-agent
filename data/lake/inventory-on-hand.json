@@ -1,0 +1,13 @@
+{
+  "id": "inventory-on-hand",
+  "question": "How much inventory do we currently have by category?",
+  "sql": "SELECT product_category, COUNT(*) AS items_on_hand, ROUND(SUM(cost), 2) AS inventory_value FROM `bigquery-public-data.thelook_ecommerce.inventory_items` WHERE sold_at IS NULL GROUP BY product_category ORDER BY items_on_hand DESC",
+  "analyst_notes": "On-hand inventory is simply sold_at IS NULL — the table is one row per physical unit. Inventory value is at cost; only use retail price if the question is about potential revenue, and label it 'at retail'.",
+  "tables_used": [
+    "inventory_items"
+  ],
+  "metric_domain": "inventory",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

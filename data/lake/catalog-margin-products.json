@@ -1,0 +1,13 @@
+{
+  "id": "catalog-margin-products",
+  "question": "Which products have the highest margin?",
+  "sql": "SELECT name, brand, category, retail_price, cost, ROUND(SAFE_DIVIDE(retail_price - cost, retail_price) * 100, 1) AS catalog_margin_pct FROM `bigquery-public-data.thelook_ecommerce.products` WHERE retail_price > 0 ORDER BY catalog_margin_pct DESC LIMIT 15",
+  "analyst_notes": "This is CATALOG margin (list price vs cost) — what pricing intends. Realized margin (what sales actually delivered) needs order_items joined to inventory_items; the two diverge with discounting. Ask which one the user means or state the choice.",
+  "tables_used": [
+    "products"
+  ],
+  "metric_domain": "products",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

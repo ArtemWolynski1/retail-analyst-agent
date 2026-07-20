@@ -1,0 +1,14 @@
+{
+  "id": "revenue-by-brand",
+  "question": "What are our top 10 brands by revenue?",
+  "sql": "SELECT p.brand, ROUND(SUM(oi.sale_price), 2) AS revenue, COUNT(DISTINCT oi.order_id) AS orders FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.products` p ON p.id = oi.product_id WHERE oi.status IN ('Complete', 'Shipped') GROUP BY p.brand ORDER BY revenue DESC LIMIT 10",
+  "analyst_notes": "Standard revenue definition. Brands are long-tail: always LIMIT and show order counts alongside revenue so one big order doesn't read as brand strength.",
+  "tables_used": [
+    "order_items",
+    "products"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

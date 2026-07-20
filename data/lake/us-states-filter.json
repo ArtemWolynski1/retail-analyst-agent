@@ -1,0 +1,13 @@
+{
+  "id": "us-states-filter",
+  "question": "Which states have the highest revenue?",
+  "sql": "SELECT u.state, ROUND(SUM(oi.sale_price), 2) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.users` u ON u.id = oi.user_id WHERE oi.status IN ('Complete', 'Shipped') AND u.country = 'United States' GROUP BY u.state ORDER BY revenue DESC LIMIT 10",
+  "analyst_notes": "users.state is global — it holds provinces and regions from every market (Guangdong, England, Sao Paulo...). For 'state' questions default to country = 'United States' and say so; only go global when the user asks. Note country spellings are literal strings: 'United States', 'Brasil'.",
+  "tables_used": [
+    "order_items",
+    "users"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "artem"
+}

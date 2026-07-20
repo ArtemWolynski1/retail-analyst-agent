@@ -1,0 +1,14 @@
+{
+  "id": "category-mix-shift",
+  "question": "Is our category mix changing over time?",
+  "sql": "WITH cat_month AS (SELECT DATE_TRUNC(DATE(oi.created_at), MONTH) AS month, p.category, SUM(oi.sale_price) AS revenue FROM `bigquery-public-data.thelook_ecommerce.order_items` oi JOIN `bigquery-public-data.thelook_ecommerce.products` p ON p.id = oi.product_id WHERE oi.status IN ('Complete', 'Shipped') AND oi.created_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 MONTH), MONTH)) GROUP BY month, p.category) SELECT month, category, ROUND(revenue, 2) AS revenue, ROUND(revenue / SUM(revenue) OVER (PARTITION BY month) * 100, 1) AS share_pct FROM cat_month ORDER BY month DESC, revenue DESC",
+  "analyst_notes": "Mix questions are about SHARES, not absolutes — a category can grow in revenue while shrinking in share. Window the share per month. Compare shares across months to answer 'shifting', don't eyeball raw revenue.",
+  "tables_used": [
+    "order_items",
+    "products"
+  ],
+  "metric_domain": "revenue",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

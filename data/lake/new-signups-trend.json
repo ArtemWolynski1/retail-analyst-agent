@@ -1,0 +1,13 @@
+{
+  "id": "new-signups-trend",
+  "question": "How is new user signup trending over the last 6 months?",
+  "sql": "SELECT FORMAT_TIMESTAMP('%Y-%m', created_at) AS month, COUNT(*) AS new_users FROM `bigquery-public-data.thelook_ecommerce.users` WHERE created_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 MONTH), MONTH)) GROUP BY month ORDER BY month",
+  "analyst_notes": "Signups come from users.created_at, not first order — many users never buy. The current month is always partial: label it or exclude it, never let a half month read as a decline.",
+  "tables_used": [
+    "users"
+  ],
+  "metric_domain": "users",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

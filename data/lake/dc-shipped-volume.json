@@ -1,0 +1,14 @@
+{
+  "id": "dc-shipped-volume",
+  "question": "Which distribution centers ship the most items?",
+  "sql": "SELECT dc.name AS distribution_center, COUNT(*) AS items_sold FROM `bigquery-public-data.thelook_ecommerce.inventory_items` ii JOIN `bigquery-public-data.thelook_ecommerce.distribution_centers` dc ON dc.id = ii.product_distribution_center_id WHERE ii.sold_at IS NOT NULL GROUP BY dc.name ORDER BY items_sold DESC",
+  "analyst_notes": "Item-to-DC mapping goes through inventory_items.product_distribution_center_id — the DC that stocked the unit. sold_at IS NOT NULL proxies shipped volume; there is no direct shipment-DC link in this schema, say it's a proxy.",
+  "tables_used": [
+    "inventory_items",
+    "distribution_centers"
+  ],
+  "metric_domain": "logistics",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

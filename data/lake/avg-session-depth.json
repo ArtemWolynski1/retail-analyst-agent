@@ -1,0 +1,13 @@
+{
+  "id": "avg-session-depth",
+  "question": "How many pages does a typical session view?",
+  "sql": "WITH per_session AS (SELECT session_id, COUNT(*) AS events FROM `bigquery-public-data.thelook_ecommerce.events` GROUP BY session_id) SELECT ROUND(AVG(events), 1) AS avg_events_per_session, APPROX_QUANTILES(events, 2)[OFFSET(1)] AS median_events FROM per_session",
+  "analyst_notes": "Session depth is skewed by bots and bounces — report the median next to the mean; when they diverge, the median is the 'typical' session. APPROX_QUANTILES is the cheap BigQuery median.",
+  "tables_used": [
+    "events"
+  ],
+  "metric_domain": "web",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}

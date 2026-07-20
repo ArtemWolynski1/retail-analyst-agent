@@ -1,0 +1,13 @@
+{
+  "id": "order-status-breakdown",
+  "question": "How do our orders break down by status?",
+  "sql": "SELECT status, COUNT(*) AS orders, ROUND(COUNT(*) / SUM(COUNT(*)) OVER () * 100, 1) AS share_pct FROM `bigquery-public-data.thelook_ecommerce.orders` GROUP BY status ORDER BY orders DESC",
+  "analyst_notes": "The share uses a window over the total so one query returns both counts and percentages. Statuses are a lifecycle (Processing -> Shipped -> Complete), not categories — flag that a big Processing share can just mean recent orders, not a problem.",
+  "tables_used": [
+    "orders"
+  ],
+  "metric_domain": "orders",
+  "status": "verified",
+  "author": "claude-draft",
+  "verified_by": "artem"
+}
