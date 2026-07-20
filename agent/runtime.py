@@ -1,12 +1,16 @@
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from google.cloud import bigquery
 
 from agent.config import Settings
 from agent.store import StoreProtocol
 from agent.trace import Trace
+
+if TYPE_CHECKING:
+    from agent.retrieval import TrioRetriever
 
 
 @dataclass
@@ -44,6 +48,7 @@ class RuntimeContext:
     schema: SchemaCache
     examples: list[Trio]
     store: StoreProtocol | None = None
+    retriever: "TrioRetriever | None" = None
     budget: TurnBudget = field(default_factory=TurnBudget)
     trace: Trace = field(default_factory=lambda: Trace(None))
     debug: bool = False

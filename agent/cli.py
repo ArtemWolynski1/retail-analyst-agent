@@ -112,6 +112,11 @@ def main() -> int:
         schema = fetch_schema(client, settings)
     examples = load_examples(EXAMPLES_PATH)
     store = make_store(settings)
+    retriever = None
+    if settings.database_url:
+        from agent.retrieval import TrioRetriever
+
+        retriever = TrioRetriever(settings)
     trace = Trace(settings.log_dir)
     trace.event("session_start", user=args.user, model=settings.agent_model, examples=len(examples))
     ctx = RuntimeContext(
@@ -121,6 +126,7 @@ def main() -> int:
         schema=schema,
         examples=examples,
         store=store,
+        retriever=retriever,
         trace=trace,
         debug=args.debug,
     )
@@ -292,9 +298,29 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
     )
     persona = ctx.store.get_active_persona() if ctx.store else None
     prefs = tuple(ctx.store.get_preferences(ctx.user_id)) if ctx.store else ()
+    # Retrieval is a deterministic pre-step, not a tool: exemplars must shape
+    # the FIRST SQL attempt. An empty or failing index degrades to the static
+    # few-shots rather than breaking the turn.
+    examples = ctx.examples
+    if ctx.retriever:
+        try:
+            hits = ctx.retriever.retrieve(question)
+        except Exception as e:
+            ctx.trace.event("retrieval_error", turn_id=ctx.budget.turn_id, error=str(e)[:200])
+            hits = []
+        if hits:
+            examples = [h.trio for h in hits]
+            ctx.trace.event(
+                "retrieval",
+                turn_id=ctx.budget.turn_id,
+                ids=[h.trio.id for h in hits],
+                scores=[h.score for h in hits],
+                dense_ranks=[h.dense_rank for h in hits],
+                lexical_ranks=[h.lexical_rank for h in hits],
+            )
     system_prompt = build_system_prompt(
         ctx.schema.summary,
-        ctx.examples,
+        examples,
         persona_text=persona["instructions"] if persona else None,
         preference_notes=prefs,
         today=date.today().isoformat(),
