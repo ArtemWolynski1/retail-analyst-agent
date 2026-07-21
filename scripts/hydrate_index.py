@@ -98,6 +98,15 @@ def main() -> int:
                     Vector(vec),
                 ),
             )
+        # Quarantine must propagate: hydration syncs, not just upserts — a trio
+        # de-listed from the lake (quarantined or deleted) leaves this version's
+        # serving rows here, or it keeps serving condemned exemplars forever.
+        removed = conn.execute(
+            "DELETE FROM trio_index WHERE embedding_version = %s AND trio_id != ALL(%s)",
+            (version, [t["id"] for t in verified]),
+        ).rowcount
+        if removed:
+            print(f"removed {removed} de-listed trio(s) from {version}")
         if args.activate:
             conn.execute(
                 "INSERT INTO index_meta (key, value) VALUES ('active_embedding_version', %s)"

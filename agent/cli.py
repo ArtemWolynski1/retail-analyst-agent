@@ -304,7 +304,12 @@ def run_turn(ctx, checkpointer, thread_id: str, question: str, console: Console,
     examples = ctx.examples
     if ctx.retriever:
         try:
-            hits = ctx.retriever.retrieve(question)
+            if ctx.settings.rerank_retrieval:
+                from agent.retrieval import llm_rerank
+
+                hits = llm_rerank(ctx.settings, question, ctx.retriever.retrieve(question, k=10), k=3)
+            else:
+                hits = ctx.retriever.retrieve(question)
         except Exception as e:
             ctx.trace.event("retrieval_error", turn_id=ctx.budget.turn_id, error=str(e)[:200])
             hits = []

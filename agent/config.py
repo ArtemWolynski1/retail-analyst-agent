@@ -21,6 +21,7 @@ class Settings:
     database_url: str | None
     embedding_model: str
     embedding_dims: int
+    rerank_retrieval: bool
     log_dir: str
     pii_columns: tuple[str, ...]
     sql_attempts_per_turn: int
@@ -42,6 +43,9 @@ def load_settings() -> Settings:
         database_url=os.getenv("DATABASE_URL") or None,
         embedding_model=os.getenv("EMBEDDING_MODEL", "gemini-embedding-001"),
         embedding_dims=int(os.getenv("EMBEDDING_DIMS", "768")),
+        # Off by default: +~1s latency per turn for +7pt hit@1 (see
+        # evals/retrieval-report.md) — a per-deployment trade, not a given.
+        rerank_retrieval=os.getenv("RERANK_RETRIEVAL", "").lower() in ("1", "true", "yes"),
         log_dir=os.getenv("LOG_DIR", ".data/logs"),
         pii_columns=tuple(
             c.strip().lower() for c in os.getenv("PII_COLUMNS", "email,phone,phone_number").split(",") if c.strip()

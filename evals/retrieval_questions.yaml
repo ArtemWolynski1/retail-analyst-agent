@@ -1,0 +1,648 @@
+# Retrieval golden set: question → acceptable trio ids (any counts as a hit).
+#
+# query_class drives the per-class breakdown:
+#   paraphrase — no token overlap with the trio; dense retrieval's home turf
+#   lexical    — near-verbatim distinctive tokens; the FTS leg should carry
+#   ambiguous  — several trios are legitimately relevant; any-of scoring
+#
+# Fairness rule: paraphrases are written from the MANAGER's vocabulary
+# (money, warehouse, shoppers), never the analyst's (revenue, DC, sessions) —
+# if the query shares the trio's words, it belongs in the lexical class.
+
+- id: earn-last-month
+  question: How much did we earn last month?
+  expected: [revenue-definition]
+  query_class: paraphrase
+
+- id: merchandise-types
+  question: Which kinds of merchandise sell best?
+  expected: [revenue-by-category, revenue-by-brand]
+  query_class: paraphrase
+
+- id: basket-size
+  question: How much does a typical purchase come to in dollars?
+  expected: [average-order-value]
+  query_class: paraphrase
+
+- id: where-profit
+  question: Where do we actually make our money after costs?
+  expected: [profit-margin-by-category]
+  query_class: paraphrase
+
+- id: ad-channels
+  question: Which ad channels bring in the most sales?
+  expected: [revenue-by-acquisition-channel]
+  query_class: paraphrase
+
+- id: cancel-often
+  question: How often do people back out of their orders?
+  expected: [cancellation-rate]
+  query_class: paraphrase
+
+- id: shipping-speed
+  question: Are we getting quicker at sending stuff out?
+  expected: [fulfillment-lag-trend]
+  query_class: paraphrase
+
+- id: package-wait
+  question: How long do customers wait for their packages?
+  expected: [avg-delivery-time]
+  query_class: paraphrase
+
+- id: warehouses-volume
+  question: Which warehouses move the most product?
+  expected: [dc-shipped-volume]
+  query_class: paraphrase
+
+- id: age-spending
+  question: Do older shoppers spend more than younger ones?
+  expected: [spend-by-age-group]
+  query_class: paraphrase
+
+- id: visitors-buying
+  question: What fraction of visitors end up buying something?
+  expected: [session-conversion-rate]
+  query_class: paraphrase
+
+- id: unsold-stock
+  question: What stock has been gathering dust in the warehouse?
+  expected: [slow-moving-inventory]
+  query_class: paraphrase
+
+- id: money-back
+  question: How much money are we giving back to customers each month?
+  expected: [refund-value-trend]
+  query_class: paraphrase
+
+- id: men-women-sales
+  question: Do men or women bring us more business?
+  expected: [revenue-by-gender]
+  query_class: paraphrase
+
+- id: state-comparison-why
+  question: Why is Texas behind California in sales?
+  expected: [why-state-underspending]
+  query_class: paraphrase
+
+- id: biggest-spenders
+  question: Who are our biggest spenders?
+  expected: [top-customers-by-spend]
+  query_class: paraphrase
+
+- id: customer-loyalty
+  question: How loyal are our customers — do they come back?
+  expected: [repeat-purchase-rate]
+  query_class: paraphrase
+
+- id: growth-check
+  question: Are we growing?
+  expected: [mom-revenue-growth, new-signups-trend]
+  query_class: paraphrase
+
+- id: lex-return-rate
+  question: What's the return rate by product category?
+  expected: [return-rate-by-category]
+  query_class: lexical
+
+- id: lex-cart-abandonment
+  question: Show me cart abandonment numbers
+  expected: [cart-abandonment-rate]
+  query_class: lexical
+
+- id: lex-order-status
+  question: Break down orders by status
+  expected: [order-status-breakdown]
+  query_class: lexical
+
+- id: lex-brand-top10
+  question: Top 10 brands by revenue please
+  expected: [revenue-by-brand]
+  query_class: lexical
+
+- id: lex-aov-channel
+  question: Average order value by traffic source
+  expected: [aov-by-channel]
+  query_class: lexical
+
+- id: lex-signups
+  question: New user signups over the last 6 months
+  expected: [new-signups-trend]
+  query_class: lexical
+
+- id: amb-sales-doing
+  question: How are sales doing?
+  expected: [mom-revenue-growth, revenue-definition, category-mix-shift]
+  query_class: ambiguous
+
+- id: amb-returns
+  question: Tell me about our returns situation
+  expected: [return-rate-by-category, returned-orders-trend, refund-value-trend]
+  query_class: ambiguous
+
+- id: amb-site-behavior
+  question: What do people actually do on the site?
+  expected: [avg-session-depth, session-conversion-rate, cart-abandonment-rate]
+  query_class: ambiguous
+
+- id: amb-worry-categories
+  question: Which product categories should we be worried about?
+  expected: [return-rate-by-category, slow-moving-inventory]
+  query_class: ambiguous
+
+# --- expansion to 120+ (2 paraphrases per trio, more lexical, more ambiguous) ---
+
+- id: p2-earn-this-month
+  question: What did we make in sales this month so far?
+  expected:
+  - revenue-definition
+  query_class: paraphrase
+- id: p2-income-last-month
+  question: Total income from orders last month?
+  expected:
+  - revenue-definition
+  query_class: paraphrase
+- id: p2-departments-earn
+  question: Which departments of our shop earn the most?
+  expected:
+  - revenue-by-category
+  query_class: paraphrase
+- id: p2-bulk-of-sales
+  question: Where does the bulk of our sales come from, product-wise?
+  expected:
+  - revenue-by-category
+  query_class: paraphrase
+- id: p2-loved-labels
+  question: Which labels do our shoppers love the most?
+  expected:
+  - revenue-by-brand
+  query_class: paraphrase
+- id: p2-best-makers
+  question: Whose merchandise sells best — which makers?
+  expected:
+  - revenue-by-brand
+  query_class: paraphrase
+- id: p2-typical-checkout
+  question: How big is the typical checkout?
+  expected:
+  - average-order-value
+  query_class: paraphrase
+- id: p2-one-order-worth
+  question: On average, how much is one order worth?
+  expected:
+  - average-order-value
+  query_class: paraphrase
+- id: p2-keep-most-money
+  question: After what we pay for goods, where do we keep the most money?
+  expected:
+  - profit-margin-by-category
+  query_class: paraphrase
+- id: p2-actually-profitable
+  question: Which product areas are actually profitable once costs are counted?
+  expected:
+  - profit-margin-by-category
+  query_class: paraphrase
+- id: p2-facebook-or-search
+  question: Is Facebook or search bringing us more paying customers?
+  expected:
+  - revenue-by-acquisition-channel
+  query_class: paraphrase
+- id: p2-marketing-pipes
+  question: Which marketing pipes deliver actual buyers?
+  expected:
+  - revenue-by-acquisition-channel
+  query_class: paraphrase
+- id: p2-picking-up
+  question: Is the business picking up compared to earlier this year?
+  expected:
+  - mom-revenue-growth
+  query_class: paraphrase
+- id: p2-month-vs-last
+  question: How did this month compare to the last one, money-wise?
+  expected:
+  - mom-revenue-growth
+  query_class: paraphrase
+- id: p2-moving-between-products
+  question: Are shoppers moving from one type of product to another?
+  expected:
+  - category-mix-shift
+  query_class: paraphrase
+- id: p2-buying-changing
+  question: Is what people buy from us changing lately?
+  expected:
+  - category-mix-shift
+  query_class: paraphrase
+- id: p2-ads-vs-organic-spend
+  question: Do buyers from ads spend more per purchase than organic visitors?
+  expected:
+  - aov-by-channel
+  query_class: paraphrase
+- id: p2-fattest-orders-source
+  question: Which acquisition source gives the fattest single orders?
+  expected:
+  - aov-by-channel
+  query_class: paraphrase
+- id: p2-red-carpet
+  question: Which shoppers should we roll out the red carpet for?
+  expected:
+  - top-customers-by-spend
+  query_class: paraphrase
+- id: p2-vip-list
+  question: Give me our VIP list.
+  expected:
+  - top-customers-by-spend
+  query_class: paraphrase
+- id: p2-america-most
+  question: Where in America do we sell the most?
+  expected:
+  - us-states-filter
+  query_class: paraphrase
+- id: p2-parts-of-country
+  question: Which parts of the country buy the most from us?
+  expected:
+  - us-states-filter
+  query_class: paraphrase
+- id: p2-florida-lags
+  question: Why does Florida lag behind New York in purchases?
+  expected:
+  - why-state-underspending
+  query_class: paraphrase
+- id: p2-region-buys-less
+  question: What explains one region buying less than another?
+  expected:
+  - why-state-underspending
+  query_class: paraphrase
+- id: p2-more-joining
+  question: Are more people joining the platform lately?
+  expected:
+  - new-signups-trend
+  query_class: paraphrase
+- id: p2-audience-growing
+  question: How fast is our audience growing in memberships?
+  expected:
+  - new-signups-trend
+  query_class: paraphrase
+- id: p2-boomers-zoomers
+  question: Are boomers or zoomers our better customers?
+  expected:
+  - spend-by-age-group
+  query_class: paraphrase
+- id: p2-generation-wallet
+  question: Which generation opens their wallet widest?
+  expected:
+  - spend-by-age-group
+  query_class: paraphrase
+- id: p2-buy-once-vanish
+  question: Do people buy once and vanish?
+  expected:
+  - repeat-purchase-rate
+  query_class: paraphrase
+- id: p2-become-regulars
+  question: What share of buyers become regulars?
+  expected:
+  - repeat-purchase-rate
+  query_class: paraphrase
+- id: p2-guys-or-girls
+  question: Who shops with us more, guys or girls?
+  expected:
+  - revenue-by-gender
+  query_class: paraphrase
+- id: p2-male-female-split
+  question: Split our business between male and female customers.
+  expected:
+  - revenue-by-gender
+  query_class: paraphrase
+- id: p2-newcomers-first
+  question: Do newcomers spend less on their first purchase than veterans do later?
+  expected:
+  - first-order-value-vs-repeat
+  query_class: paraphrase
+- id: p2-second-purchase-bigger
+  question: Is the second purchase usually bigger than the first?
+  expected:
+  - first-order-value-vs-repeat
+  query_class: paraphrase
+- id: p2-browsing-checkout
+  question: Out of everyone browsing, how many actually check out?
+  expected:
+  - session-conversion-rate
+  query_class: paraphrase
+- id: p2-visits-to-purchases
+  question: What share of visits turn into purchases?
+  expected:
+  - session-conversion-rate
+  query_class: paraphrase
+- id: p2-referrers-buy
+  question: Which referrers send visitors who actually buy?
+  expected:
+  - conversion-by-session-source
+  query_class: paraphrase
+- id: p2-best-converting-visits
+  question: From where do the best-converting visits come?
+  expected:
+  - conversion-by-session-source
+  query_class: paraphrase
+- id: p2-bail-last-step
+  question: How many shoppers bail at the last step?
+  expected:
+  - cart-abandonment-rate
+  query_class: paraphrase
+- id: p2-add-then-disappear
+  question: People add items and then disappear — how often does that happen?
+  expected:
+  - cart-abandonment-rate
+  query_class: paraphrase
+- id: p2-poke-around
+  question: How much do visitors poke around per visit?
+  expected:
+  - avg-session-depth
+  query_class: paraphrase
+- id: p2-pages-flipped
+  question: How many pages does someone flip through when browsing?
+  expected:
+  - avg-session-depth
+  query_class: paraphrase
+- id: p2-pull-the-plug
+  question: How often do buyers pull the plug on an order?
+  expected:
+  - cancellation-rate
+  query_class: paraphrase
+- id: p2-called-off
+  question: What share of purchases get called off?
+  expected:
+  - cancellation-rate
+  query_class: paraphrase
+- id: p2-orders-stand
+  question: Where do all our orders currently stand?
+  expected:
+  - order-status-breakdown
+  query_class: paraphrase
+- id: p2-finished-vs-inflight
+  question: What's the mix of finished versus in-flight orders?
+  expected:
+  - order-status-breakdown
+  query_class: paraphrase
+- id: p2-single-or-baskets
+  question: Do people buy single things or whole baskets?
+  expected:
+  - avg-items-per-order
+  query_class: paraphrase
+- id: p2-products-per-checkout
+  question: How many products go into one checkout usually?
+  expected:
+  - avg-items-per-order
+  query_class: paraphrase
+- id: p2-sendbacks-rising
+  question: Are send-backs rising this year?
+  expected:
+  - returned-orders-trend
+  query_class: paraphrase
+- id: p2-come-back-monthly
+  question: Month by month, how many orders come back to us?
+  expected:
+  - returned-orders-trend
+  query_class: paraphrase
+- id: p2-disappointing-goods
+  question: Which types of goods disappoint people the most?
+  expected:
+  - return-rate-by-category
+  query_class: paraphrase
+- id: p2-shipped-back-most
+  question: What merchandise gets shipped back most often?
+  expected:
+  - return-rate-by-category
+  query_class: paraphrase
+- id: p2-cash-walks-out
+  question: How much cash walks out the door via returns monthly?
+  expected:
+  - refund-value-trend
+  query_class: paraphrase
+- id: p2-returns-costing
+  question: What are returns costing us in dollars over time?
+  expected:
+  - refund-value-trend
+  query_class: paraphrase
+- id: p2-doorbell
+  question: Once shipped, how many days till the doorbell rings?
+  expected:
+  - avg-delivery-time
+  query_class: paraphrase
+- id: p2-parcels-reach
+  question: How fast do parcels reach buyers?
+  expected:
+  - avg-delivery-time
+  query_class: paraphrase
+- id: p2-packing-faster
+  question: Are we packing orders faster than we used to?
+  expected:
+  - fulfillment-lag-trend
+  query_class: paraphrase
+- id: p2-out-the-door
+  question: How quickly do we get purchases out the door these days?
+  expected:
+  - fulfillment-lag-trend
+  query_class: paraphrase
+- id: p2-workhorse-hub
+  question: Which of our hubs is the workhorse?
+  expected:
+  - dc-shipped-volume
+  query_class: paraphrase
+- id: p2-rank-fulfillment-sites
+  question: Rank our fulfillment sites by how much they push out.
+  expected:
+  - dc-shipped-volume
+  query_class: paraphrase
+- id: p2-sitting-on-shelves
+  question: What's just been sitting on our shelves for months?
+  expected:
+  - slow-moving-inventory
+  query_class: paraphrase
+- id: p2-refuse-to-sell
+  question: Which goods simply refuse to sell?
+  expected:
+  - slow-moving-inventory
+  query_class: paraphrase
+- id: p2-stock-right-now
+  question: How much stock are we sitting on right now?
+  expected:
+  - inventory-on-hand
+  query_class: paraphrase
+- id: p2-storeroom-by-type
+  question: What's currently in the storeroom, by type?
+  expected:
+  - inventory-on-hand
+  query_class: paraphrase
+- id: p2-juiciest-markup
+  question: Which items have the juiciest markup?
+  expected:
+  - catalog-margin-products
+  query_class: paraphrase
+- id: p2-cost-vs-sticker
+  question: Where's the biggest gap between our cost and the sticker price?
+  expected:
+  - catalog-margin-products
+  query_class: paraphrase
+- id: lex2-spend-per-user-state
+  question: spend per user by state
+  expected:
+  - why-state-underspending
+  query_class: lexical
+- id: lex2-orders-per-user-aov
+  question: orders per user and average order value by state
+  expected:
+  - why-state-underspending
+  query_class: lexical
+- id: lex2-acquisition-channel
+  question: revenue by acquisition channel
+  expected:
+  - revenue-by-acquisition-channel
+  query_class: lexical
+- id: lex2-session-conversion
+  question: session conversion rate
+  expected:
+  - session-conversion-rate
+  query_class: lexical
+- id: lex2-conversion-source
+  question: conversion by traffic source
+  expected:
+  - conversion-by-session-source
+  query_class: lexical
+- id: lex2-items-per-order
+  question: average items per order
+  expected:
+  - avg-items-per-order
+  query_class: lexical
+- id: lex2-inventory-on-hand
+  question: inventory on hand by category
+  expected:
+  - inventory-on-hand
+  query_class: lexical
+- id: lex2-slow-moving
+  question: slow-moving inventory report
+  expected:
+  - slow-moving-inventory
+  query_class: lexical
+- id: lex2-delivery-days
+  question: average delivery time in days
+  expected:
+  - avg-delivery-time
+  query_class: lexical
+- id: lex2-hours-to-ship
+  question: hours to ship trend by month
+  expected:
+  - fulfillment-lag-trend
+  query_class: lexical
+- id: lex2-margin-category
+  question: profit margin by category
+  expected:
+  - profit-margin-by-category
+  query_class: lexical
+- id: lex2-catalog-margin
+  question: catalog margin top products
+  expected:
+  - catalog-margin-products
+  query_class: lexical
+- id: lex2-repeat-rate
+  question: repeat purchase rate
+  expected:
+  - repeat-purchase-rate
+  query_class: lexical
+- id: lex2-mom-growth
+  question: month over month revenue growth
+  expected:
+  - mom-revenue-growth
+  query_class: lexical
+- id: lex2-mix-share
+  question: category mix share by month
+  expected:
+  - category-mix-shift
+  query_class: lexical
+- id: lex2-refunded-value
+  question: refunded value by month
+  expected:
+  - refund-value-trend
+  query_class: lexical
+- id: amb2-business-healthy
+  question: How healthy is the business overall?
+  expected:
+  - mom-revenue-growth
+  - revenue-definition
+  - order-status-breakdown
+  query_class: ambiguous
+- id: amb2-marketing-double-down
+  question: What should marketing double down on?
+  expected:
+  - revenue-by-acquisition-channel
+  - conversion-by-session-source
+  - aov-by-channel
+  query_class: ambiguous
+- id: amb2-about-customers
+  question: Tell me about our customers.
+  expected:
+  - top-customers-by-spend
+  - spend-by-age-group
+  - revenue-by-gender
+  - repeat-purchase-rate
+  query_class: ambiguous
+- id: amb2-logistics-performing
+  question: How is our logistics performing?
+  expected:
+  - avg-delivery-time
+  - fulfillment-lag-trend
+  - dc-shipped-volume
+  query_class: ambiguous
+- id: amb2-losing-money
+  question: Where are we losing money?
+  expected:
+  - refund-value-trend
+  - return-rate-by-category
+  - slow-moving-inventory
+  - cancellation-rate
+  query_class: ambiguous
+- id: amb2-warehouse-alarming
+  question: Anything alarming in the warehouse?
+  expected:
+  - slow-moving-inventory
+  - inventory-on-hand
+  query_class: ambiguous
+- id: amb2-website-doing
+  question: How is the website doing?
+  expected:
+  - session-conversion-rate
+  - avg-session-depth
+  - cart-abandonment-rate
+  query_class: ambiguous
+- id: amb2-buying-habits
+  question: What do we know about buying habits?
+  expected:
+  - repeat-purchase-rate
+  - avg-items-per-order
+  - first-order-value-vs-repeat
+  - spend-by-age-group
+  query_class: ambiguous
+- id: amb2-products-winning
+  question: Which products are winning?
+  expected:
+  - revenue-by-category
+  - revenue-by-brand
+  - catalog-margin-products
+  query_class: ambiguous
+- id: amb2-customers-happy
+  question: Are customers happy with what they receive?
+  expected:
+  - return-rate-by-category
+  - returned-orders-trend
+  - avg-delivery-time
+  query_class: ambiguous
+- id: amb2-pulse-growth
+  question: Give me a pulse on growth.
+  expected:
+  - mom-revenue-growth
+  - new-signups-trend
+  query_class: ambiguous
+- id: amb2-funnel
+  question: What is our funnel looking like?
+  expected:
+  - session-conversion-rate
+  - cart-abandonment-rate
+  - conversion-by-session-source
+  query_class: ambiguous
